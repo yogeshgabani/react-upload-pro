@@ -1,0 +1,14 @@
+src
+demo
+tests
+.storybook
+storybook-static
+playwright-report
+test-results
+coverage
+.github
+*.config.*
+tsconfig*.json
+vitest.config.*
+playwright.config.*
+.eslintrc*

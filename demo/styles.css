@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+}
+
+/* Sensible defaults so the page-level scrollbar matches the inner
+   `.rup-scrollbar` chrome even before App.tsx's useEffect mirrors the
+   accent + border onto :root. Dark-mode default mirrors what App.tsx
+   sets for the dark theme (slate-700 = 55 65 81). */
+:root {
+  --rup-accent: 79 70 229;
+  --rup-border: 229 231 235;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rup-border: 55 65 81;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Global themed scrollbar — every scrollable surface (page body, modals,
+   code blocks, file gallery, …) uses the same chrome. Both Firefox
+   (`scrollbar-*`) and Chromium/Safari (`::-webkit-scrollbar-*`) are covered.
+
+   `--rup-accent` is mirrored onto :root by App.tsx whenever the accent
+   picker changes, so all scrollbars update live across the whole page.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Firefox / standards-track */
+html,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--rup-accent) / 0.7) rgb(var(--rup-border) / 0.4);
+}
+
+/* Webkit — the bare ::-webkit-scrollbar selector matches every scrollbar on
+   the page including the page-level html/body one, so styling stays
+   identical for inner and outer scroll areas. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgb(var(--rup-border) / 0.4);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--rup-accent) / 0.7);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--rup-accent) / 1);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

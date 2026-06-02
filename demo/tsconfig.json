@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["vite/client", "node"],
+    "paths": {
+      "react-upload-pro": ["../src/index.ts"],
+      "react-upload-pro/variants": ["../src/variants/index.ts"],
+      "react-upload-pro/cloud": ["../src/cloud/index.ts"],
+      "react-upload-pro/styles.css": ["../src/theme/styles.css"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}
