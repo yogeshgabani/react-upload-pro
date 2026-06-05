@@ -109,6 +109,149 @@ That's it. The component handles drag/drop, validation, progress bars, retries, 
 
 ---
 
+## Import the styles
+
+> **You must import the bundled stylesheet exactly once** — otherwise the
+> dropzone renders unstyled (no dashed border, no accent color, no layout).
+
+```tsx
+// Vite, CRA, Remix, Astro — anywhere with a global entry file
+import "react-upload-pro/styles.css";
+```
+
+```tsx
+// Next.js App Router
+// app/layout.tsx
+import "react-upload-pro/styles.css";
+```
+
+```tsx
+// Next.js Pages Router
+// pages/_app.tsx
+import "react-upload-pro/styles.css";
+```
+
+The stylesheet is **self-contained** — it ships every utility class the
+components use, so you do **not** need Tailwind, PostCSS, or any extra build
+step in your app to get the demo look. If you also use Tailwind in your
+project, see [Tailwind setup](#tailwind-setup) below to share design tokens.
+
+---
+
+## Full sample with comments
+
+A complete, copy-paste-ready example. Every prop is annotated so you can see
+exactly what each piece does — delete the bits you don't need.
+
+```tsx
+// src/components/MyUploader.tsx
+
+// 1️⃣ Core component + a couple of types we'll use in the callbacks.
+import {
+  Dropzone,
+  ThemeProvider,
+  I18nProvider,
+  type UploadFile,
+  type ValidationError,
+} from "react-upload-pro";
+
+// 2️⃣ Bundled stylesheet. Import it once at the top level of your app
+//    (e.g. main.tsx / layout.tsx) — including it here works too.
+import "react-upload-pro/styles.css";
+
+import { useState } from "react";
+
+export default function MyUploader() {
+  // Track files that the dropzone rejects (wrong type, too big, etc.) so we
+  // can show them in a toast or modal. Optional — leave it out if you don't
+  // need rejection UI.
+  const [rejected, setRejected] = useState<ValidationError[]>([]);
+
+  return (
+    // ThemeProvider gives you light / dark / auto. Wrap once near the root.
+    <ThemeProvider defaultTheme="auto">
+      {/* I18nProvider translates every internal string. 23 locales built in. */}
+      <I18nProvider locale="en">
+        <Dropzone
+          // ───── Where the files go ─────
+          // Pass `endpoint` for a standard multipart POST, OR pass `cloud`
+          // (S3 / Cloudinary / Firebase / …) for direct-to-bucket uploads.
+          endpoint="/api/upload"
+
+          // ───── Validation ─────
+          accept="image/*,application/pdf"     // MIME globs or extensions
+          maxSize={10 * 1024 * 1024}           // 10 MB per file
+          minSize={1024}                       // 1 KB per file
+          maxFiles={5}                         // total file cap
+          multiple                             // allow picking many at once
+          rejectDuplicates                     // skip identical files
+
+          // ───── Upload behaviour ─────
+          mode="auto"          // 'manual' | 'instant' | 'auto' | 'queue'
+          strategy="parallel"  // 'parallel' | 'sequential'
+          concurrency={3}      // parallel upload slots
+          retries={2}          // retry attempts per file on network errors
+          chunkSize={5 * 1024 * 1024}  // 5 MB chunks (omit for single-shot)
+
+          // ───── Built-in UI extras ─────
+          previewable          // eye icon → fullscreen preview
+          editable             // pencil icon → rename + tag
+          clipboard            // allow ⌘V / Ctrl+V paste
+          scrollAfter={5}      // gallery scrolls after 5 files
+          maxHeight="320px"    // height of the scroll region
+
+          // ───── Copy ─────
+          label="Drop your files here"
+          hint="PNG, JPG, or PDF — up to 10 MB each, max 5 files"
+
+          // ───── Events ─────
+          onDrop={(accepted, rejected) =>
+            console.log("dropped", { accepted, rejected })
+          }
+          onDropRejected={setRejected} // collect validation errors for UI
+          onUploadStart={(file: UploadFile) =>
+            console.log("uploading", file.name)
+          }
+          onUploadProgress={(file, progress) =>
+            console.log(`${file.name}: ${progress.percent}%`)
+          }
+          onUploadSuccess={(file) =>
+            console.log("✅ done →", file.url)
+          }
+          onUploadError={(file, err) =>
+            console.error("❌", file.name, err.message)
+          }
+        />
+
+        {/* Toast/banner for rejected files. Replace with your own UI. */}
+        {rejected.length > 0 && (
+          <ul style={{ color: "crimson", marginTop: 12 }}>
+            {rejected.map((e, i) => (
+              <li key={i}>
+                {e.file?.name ?? "file"} — {e.message}
+              </li>
+            ))}
+          </ul>
+        )}
+      </I18nProvider>
+    </ThemeProvider>
+  );
+}
+```
+
+**What this gives you out of the box:**
+
+- 🖱️ Drag-drop, click-to-browse, paste from clipboard
+- 🧪 Live validation with friendly error messages
+- 📊 Per-file progress bars + speed + ETA
+- 🔁 Automatic retries with exponential backoff
+- 👁️ Fullscreen preview for images, PDFs, video, audio
+- ✏️ Inline rename + metadata edit modal
+- 🌗 Light / dark / auto themes with a single prop
+- 🌐 23-locale i18n with RTL support
+
+---
+
 ## Step-by-step setup
 
 ### 1. Vite + React
@@ -195,9 +338,17 @@ Same `src/App.tsx` as the Vite example — CRA just works.
 
 ---
 
-## Tailwind setup
+## Tailwind setup (optional)
 
-If you use Tailwind, plug in the preset to pick up `react-upload-pro`'s CSS variables and utilities:
+**You only need this section if your own app uses Tailwind** and you want to
+re-use `react-upload-pro`'s design tokens (`text-rup-accent`, `bg-rup-bg`,
+etc.) in your own components.
+
+> Not using Tailwind? Stop here — `import "react-upload-pro/styles.css"` is
+> already enough. The bundled stylesheet ships every utility the components
+> need.
+
+Plug in the preset:
 
 ```js
 // tailwind.config.js
@@ -210,13 +361,14 @@ module.exports = {
 };
 ```
 
-Then import the base styles **once** (e.g. in your root layout / `main.tsx`):
+Then anywhere in your app:
 
-```ts
-import "react-upload-pro/styles.css";
+```tsx
+<button className="bg-rup-accent text-rup-accent-fg">Custom button</button>
 ```
 
-Not using Tailwind? You can skip the preset and just import the CSS — everything still works, the preset only matters if you want to extend the design tokens.
+The accent color follows the same `--rup-accent` variable the dropzone uses,
+so picking a new accent updates your custom UI too.
 
 ---
 
@@ -725,6 +877,15 @@ PRs welcome — please:
 1. Open an issue first for non-trivial changes
 2. Add a test for new behavior
 3. Run `npm run typecheck && npm run lint && npm test` before pushing
+
+---
+
+## Changelog
+
+Every release is documented in [`CHANGELOG.md`](./CHANGELOG.md) — features
+added, bugs fixed, breaking changes called out. The live playground also has
+a "Version history" panel under the variant gallery so you can review the
+release timeline right from the demo.
 
 ---
 

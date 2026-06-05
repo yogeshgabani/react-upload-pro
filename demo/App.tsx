@@ -874,7 +874,7 @@ export function App() {
           />
           {/* ───── Header ───── */}
           <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/70">
-            <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
+            <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 flex-wrap px-4 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-indigo-500/20 sm:h-9 sm:w-9 sm:rounded-xl">
                   <Icon name="upload" size={16} />
@@ -885,7 +885,7 @@ export function App() {
                       react-upload-pro
                     </h1>
                     <span className="hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 sm:inline dark:bg-indigo-950 dark:text-indigo-300">
-                      V0.1.0
+                      V0.1.1
                     </span>
                   </div>
                   <p className="hidden text-xs text-slate-500 sm:block dark:text-slate-400">
@@ -1151,7 +1151,12 @@ export function App() {
             </div>
           </main>
 
+          <VersionHistory />
+
+
           <Footer totalCount={variantKeys.length} dm={dm} />
+
+          <SiteStatsStrip />
 
           <ValidationErrorsModal
             open={errorModalOpen}
@@ -1795,7 +1800,7 @@ function SocialIcons({ dm }: { dm: DemoMessages }) {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center flex-wrap sm:gap-2 gap-3">
         {socialLinks.map((s) => {
           const hasLink = !!s.href;
           const brandStyle = {
@@ -2008,6 +2013,251 @@ function ScrollToTop({ dm }: { dm: DemoMessages }) {
   );
 }
 
+// ────────── Version history ──────────
+
+/**
+ * Mirror of CHANGELOG.md, surfaced in the demo so visitors can review the
+ * release timeline without leaving the playground. Keep this list in sync
+ * whenever a new release lands.
+ */
+interface ReleaseEntry {
+  version: string;
+  date: string;
+  tag?: "latest" | "patch" | "minor" | "major";
+  summary: string;
+  changes: { label: string; items: string[] }[];
+}
+
+const releases: ReleaseEntry[] = [
+  {
+    version: "0.1.1",
+    date: "2026-06-05",
+    tag: "latest",
+    summary:
+      "Self-contained bundled stylesheet — no Tailwind required in consumer apps.",
+    changes: [
+      {
+        label: "Fixed",
+        items: [
+          "`dist/styles.css` now ships every utility class the components use, so importing it once gives the demo look in any project (Vite, Next.js, CRA, Remix, Astro…).",
+          "Disabled Tailwind's preflight reset in the bundled stylesheet — the package no longer overrides your box-sizing, margin, or heading styles.",
+        ],
+      },
+      {
+        label: "Internal",
+        items: [
+          "New `tailwind.lib.config.cjs` + `src/theme/lib.css` drive the bundled CSS build.",
+          "`tsup.config.ts` runs Tailwind CLI in its `onSuccess` hook instead of copying the bare variable file.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.1.0",
+    date: "2026-06-01",
+    summary: "Initial public release.",
+    changes: [
+      {
+        label: "Components",
+        items: [
+          "`Dropzone`, `UploadArea`, `UploadButton`, `UploadGallery`, `UploadProgress`, `UploadPreview`, `UploadModal`, `FilePreviewModal`, `FileEditModal`, `ValidationErrorsModal`.",
+        ],
+      },
+      {
+        label: "Hooks",
+        items: [
+          "`useDropzone`, `useUploader`, `useUploadQueue`, `useUploadProgress`, `useFilePreview`.",
+        ],
+      },
+      {
+        label: "Upload engine",
+        items: [
+          "Four modes: `manual`, `instant`, `auto`, `queue`.",
+          "Parallel + sequential strategies with configurable concurrency.",
+          "Chunked uploads with pause / resume / retry / cancel + exponential-backoff retries.",
+          "EWMA-based speed and ETA tracking.",
+        ],
+      },
+      {
+        label: "Validation",
+        items: [
+          "MIME globs, extension lists, magic-number signature detection.",
+          "Min / max size, max file count, duplicate detection.",
+          "Custom sync + async validators and a virus-scan hook.",
+        ],
+      },
+      {
+        label: "Cloud adapters",
+        items: [
+          "AWS S3, Cloudinary, Firebase Storage, Supabase Storage, DigitalOcean Spaces, Azure Blob, Google Cloud Storage.",
+        ],
+      },
+      {
+        label: "UI variants (20+)",
+        items: [
+          "Minimal, Business, Creative, Enterprise, and Layouts categories — every option works on every variant.",
+        ],
+      },
+      {
+        label: "Internationalization",
+        items: [
+          "23 built-in locales with RTL-aware rendering for Arabic, Urdu, Hebrew, Farsi.",
+        ],
+      },
+      {
+        label: "Theming + a11y",
+        items: [
+          "Light / dark / auto via `ThemeProvider`; CSS variables for every design token.",
+          "ARIA roles, full keyboard navigation, visible focus rings tied to the accent color.",
+        ],
+      },
+      {
+        label: "Developer experience",
+        items: [
+          "TypeScript-first with ESM + CJS dual emit.",
+          "Tree-shakable — `framer-motion` and cloud SDKs only load when used.",
+          "SSR-safe with a `\"use client\"` banner for Next.js App Router.",
+        ],
+      },
+    ],
+  },
+];
+
+const tagStyles: Record<NonNullable<ReleaseEntry["tag"]>, string> = {
+  latest:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  patch:
+    "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  minor:
+    "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
+  major:
+    "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+};
+
+function VersionHistory() {
+  // First entry is always the newest; default it open and collapse the rest.
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set([releases[0]?.version].filter(Boolean) as string[]),
+  );
+
+  const toggle = (version: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(version)) next.delete(version);
+      else next.add(version);
+      return next;
+    });
+
+  return (
+    <section className="px-4 pb-4 pt-8 sm:px-6 sm:pt-12">
+      <div className="mx-auto max-w-[1400px]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold sm:text-lg">
+                Version history
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                Release notes mirrored from{" "}
+                <code className="rounded bg-slate-100 px-1 py-0.5 text-[11px] dark:bg-slate-800">
+                  CHANGELOG.md
+                </code>
+                . Click a version to expand.
+              </p>
+            </div>
+            {/* <a
+              href="https://github.com/react-upload-pro/react-upload-pro/blob/main/CHANGELOG.md"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1 text-xs font-medium text-rup-accent hover:underline sm:text-sm"
+            >
+              Full changelog on GitHub →
+            </a> */}
+          </div>
+
+          <ol className="relative space-y-3 border-l border-slate-200 pl-5 dark:border-slate-800 max-h-[500px] overflow-auto">
+            {releases.map((release) => {
+              const isOpen = expanded.has(release.version);
+              return (
+                <li key={release.version} className="relative">
+                  {/* Timeline dot */}
+                  <span
+                    aria-hidden
+                    className={`absolute -left-[26px] top-3 h-3 w-3 rounded-full border-2 ${
+                      release.tag === "latest"
+                        ? "border-emerald-400 bg-emerald-500"
+                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggle(release.version)}
+                    aria-expanded={isOpen}
+                    className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-left transition hover:border-rup-accent/40 hover:bg-rup-accent/5 dark:border-slate-800 dark:bg-slate-950/40"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        V{release.version}
+                      </span>
+                      {release.tag && (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tagStyles[release.tag]}`}
+                        >
+                          {release.tag}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {release.date}
+                      </span>
+                    </div>
+                    <span
+                      aria-hidden
+                      className={`text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    >
+                      ▾
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="mt-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                      <p className="mb-3 text-sm text-slate-700 dark:text-slate-200">
+                        {release.summary}
+                      </p>
+                      <div className="space-y-3">
+                        {release.changes.map((group) => (
+                          <div key={group.label}>
+                            <h4 className="text-[11px] font-bold uppercase tracking-wider text-rup-accent">
+                              {group.label}
+                            </h4>
+                            <ul className="mt-1.5 space-y-1 pl-4 text-xs text-slate-600 sm:text-[13px] dark:text-slate-300">
+                              {group.items.map((item, i) => (
+                                <li
+                                  key={i}
+                                  className="list-disc marker:text-slate-400"
+                                  dangerouslySetInnerHTML={{
+                                    __html: item.replace(
+                                      /`([^`]+)`/g,
+                                      '<code class="rounded bg-slate-100 px-1 py-0.5 text-[11px] dark:bg-slate-800">$1</code>',
+                                    ),
+                                  }}
+                                />
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ────────── Footer ──────────
 
 function Footer({ totalCount, dm }: { totalCount: number; dm: DemoMessages }) {
@@ -2183,5 +2433,224 @@ function FooterAction({
     <button type="button" onClick={onClick} className={cls}>
       {children}
     </button>
+  );
+}
+
+
+// ────────── Site stats strip ──────────
+
+// Public counter service. Free, no auth, rate-limited per IP.
+// Swap the namespace if you fork the demo — keys must be unique per project.
+const STATS_NAMESPACE = "react-upload-pro";
+const STATS_HITS_KEY = "playground-hits";
+const STATS_VISITORS_KEY = "playground-visitors";
+const STATS_VISITOR_FLAG = "rup-visited";
+const SITE_LAST_UPDATED = "2026-06-05";
+
+function formatStat(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return "—";
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 10_000) return (n / 1000).toFixed(1) + "K";
+  return n.toLocaleString("en-US");
+}
+
+// Animate a number from 0 → target over ~1.5s with ease-out cubic.
+function useCountUp(target: number, durationMs = 1500): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!target || target <= 0) {
+      setValue(0);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs]);
+  return value;
+}
+
+/**
+ * Theme-aware live counters strip. Reads `--rup-accent` for accent color so
+ * it automatically follows the playground's accent picker, and uses
+ * `dark:` Tailwind variants so it switches with the light/dark theme.
+ */
+function SiteStatsStrip() {
+  const [hits, setHits] = useState(0);
+  const [visitors, setVisitors] = useState(0);
+  const hitsAnim = useCountUp(hits);
+  const visitorsAnim = useCountUp(visitors);
+
+  // Fetch counters on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const base = "https://abacus.jasoncameron.dev";
+
+    // Total hits — increment on every page load
+    fetch(`${base}/hit/${STATS_NAMESPACE}/${STATS_HITS_KEY}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setHits(Number(d?.value) || 0))
+      .catch(() => {});
+
+    // Total visitors — increment only for new visitors (localStorage flag)
+    const isNew = !localStorage.getItem(STATS_VISITOR_FLAG);
+    const visitorUrl = isNew
+      ? `${base}/hit/${STATS_NAMESPACE}/${STATS_VISITORS_KEY}`
+      : `${base}/get/${STATS_NAMESPACE}/${STATS_VISITORS_KEY}`;
+    fetch(visitorUrl)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        setVisitors(Number(d?.value) || 0);
+        if (isNew) {
+          try {
+            localStorage.setItem(STATS_VISITOR_FLAG, String(Date.now()));
+          } catch {
+            /* private mode etc. — ignore */
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const stats: {
+    label: string;
+    value: string;
+    icon: ReactNode;
+    highlight?: boolean;
+    live?: boolean;
+  }[] = [
+    {
+      label: "Last Updated",
+      value: SITE_LAST_UPDATED,
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="17" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      ),
+    },
+    {
+      label: "Total Hits",
+      value: hits > 0 ? formatStat(hitsAnim) : "—",
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      ),
+    },
+    {
+      label: "Total Visitors",
+      value: visitors > 0 ? formatStat(visitorsAnim) : "—",
+      highlight: true,
+      live: true,
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <section
+      role="group"
+      aria-label="Site stats"
+      className="px-4 pb-4 pt-2 sm:px-6"
+    >
+      <div className="mx-auto max-w-[1400px]">
+        {/* Accent-tinted gradient border — uses the live `--rup-accent` so the
+            strip stays in visual lock-step with the accent picker. */}
+        <div
+          className="rounded-2xl p-[1.5px]"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, rgb(var(--rup-accent) / 0.55), rgb(168 85 247 / 0.45), rgb(var(--rup-accent) / 0.55))",
+          }}
+        >
+          <div className="grid gap-3 rounded-[15px] bg-white p-3 sm:grid-cols-3 sm:p-4 dark:bg-slate-950">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition sm:px-4 ${
+                  stat.highlight
+                    ? "border-rup-accent/30 bg-rup-accent/5 dark:border-rup-accent/40 dark:bg-rup-accent/10"
+                    : "border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50"
+                }`}
+              >
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                    stat.highlight
+                      ? "bg-rup-accent text-rup-accent-fg shadow-md shadow-rup-accent/20"
+                      : "bg-rup-accent/10 text-rup-accent"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {stat.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <span className="truncate">{stat.label}</span>
+                    {stat.live && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inset-0 animate-ping rounded-full bg-emerald-500/70" />
+                          <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        </span>
+                        LIVE
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className={`mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl ${
+                      stat.highlight
+                        ? "text-rup-accent"
+                        : "text-slate-900 dark:text-slate-100"
+                    }`}
+                  >
+                    {stat.value}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

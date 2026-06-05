@@ -1,0 +1,85 @@
+/**
+ * Input file for the bundled `dist/styles.css`. Combines the design-token CSS
+ * variables with `@tailwind utilities`, so the build emits one self-contained
+ * stylesheet that gives consumers the full demo look out of the box.
+ *
+ * Do NOT import this file from app code — consumers should import
+ * `react-upload-pro/styles.css` (which is the compiled output of this file).
+ */
+
+[data-rup-root],
+[data-rup-root][data-theme='light'] {
+  --rup-bg: 255 255 255;
+  --rup-fg: 17 24 39;
+  --rup-muted: 107 114 128;
+  --rup-border: 229 231 235;
+  --rup-accent: 79 70 229;
+  --rup-accent-fg: 255 255 255;
+  --rup-success: 34 197 94;
+  --rup-error: 239 68 68;
+  --rup-warning: 234 179 8;
+  --rup-radius: 0.75rem;
+  --rup-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 4px 12px -2px rgb(0 0 0 / 0.06);
+}
+
+[data-rup-root][data-theme='dark'] {
+  --rup-bg: 17 24 39;
+  --rup-fg: 243 244 246;
+  --rup-muted: 156 163 175;
+  --rup-border: 55 65 81;
+  --rup-accent: 129 140 248;
+  --rup-accent-fg: 17 24 39;
+  --rup-success: 74 222 128;
+  --rup-error: 248 113 113;
+  --rup-warning: 250 204 21;
+  --rup-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 12px -2px rgb(0 0 0 / 0.5);
+}
+
+[dir='rtl'] [data-rup-root] {
+  direction: rtl;
+}
+
+@keyframes rup-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes rup-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Themed scrollbar used by bounded gallery lists and any consumer who opts in
+   via the `rup-scrollbar` utility class. */
+.rup-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--rup-accent) / 0.7) transparent;
+}
+
+.rup-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rup-scrollbar::-webkit-scrollbar-track {
+  background-color: rgb(var(--rup-border) / 0.4);
+  border-radius: 999px;
+}
+
+.rup-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--rup-accent) / 0.7);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.15s ease;
+}
+
+.rup-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--rup-accent) / 1);
+}
+
+.rup-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@tailwind utilities;

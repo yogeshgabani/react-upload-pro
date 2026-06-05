@@ -1,6 +1,40 @@
 import { defineConfig } from 'tsup';
-import { copyFile, readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { join } from 'node:path';
+
+/**
+ * Compile the bundled stylesheet via the Tailwind CLI. Scans the package
+ * sources for utility classes (per `tailwind.lib.config.cjs`) and emits a
+ * self-contained `dist/styles.css` so consumers don't need to install or
+ * configure Tailwind in their own app.
+ */
+function buildPackageCss(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const isWindows = process.platform === 'win32';
+    const bin = isWindows ? 'tailwindcss.cmd' : 'tailwindcss';
+    const args = [
+      '-c',
+      'tailwind.lib.config.cjs',
+      '-i',
+      'src/theme/lib.css',
+      '-o',
+      'dist/styles.css',
+      '--minify',
+    ];
+    // shell: true is required so `.cmd` shims work on Windows. The args we
+    // pass are static (no user input), so there's no injection surface.
+    const child = spawn(join('node_modules', '.bin', bin), args, {
+      stdio: 'inherit',
+      shell: true,
+    });
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`tailwindcss exited with code ${code}`));
+    });
+  });
+}
 
 /**
  * tsup writes a "use client" banner, but Rollup strips module-level directives
@@ -41,6 +75,6 @@ export default defineConfig({
   },
   async onSuccess() {
     await prependUseClient('dist');
-    await copyFile('src/theme/styles.css', 'dist/styles.css');
+    await buildPackageCss();
   },
 });
