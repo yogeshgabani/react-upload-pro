@@ -35,6 +35,71 @@ export interface VariantProps extends DropzoneOptions {
   scrollAfter?: number;
   /** Max CSS height for the scroll region. Default '280px'. */
   maxHeight?: string;
+  /**
+   * Override the accent color used by the variant — drives borders, focus
+   * rings, progress fill, primary buttons, and hover states. Accepts:
+   *   - a hex string: `'#10b981'` or `'#10B981'`
+   *   - an RGB triplet string: `'16 185 129'`
+   *   - any CSS color the browser understands (`'rebeccapurple'`, `'rgb(16 185 129)'`)
+   *
+   * Applied as an inline `--rup-accent` CSS variable on the variant's outer
+   * wrapper, so it stays scoped to this instance and doesn't leak globally.
+   */
+  accent?: string;
+  /**
+   * Foreground color used on top of `accent` (e.g. button text on accent
+   * background). Same format as `accent`. Defaults to white / dark slate
+   * automatically when `accent` is set.
+   */
+  accentFg?: string;
+}
+
+/**
+ * Convert a value the consumer passed into `accent` / `accentFg` into the
+ * RGB-triplet form Tailwind's alpha-aware utilities need.
+ *
+ * - `'#10b981'`     → `'16 185 129'`
+ * - `'16 185 129'`  → `'16 185 129'` (already triplet, pass through)
+ * - anything else   → returned verbatim (lets browser parse `rebeccapurple` etc.)
+ *
+ * Hex parsing is lenient — both `#rgb` and `#rrggbb` work, case-insensitive.
+ */
+export function normalizeColorInput(value: string): string {
+  const trimmed = value.trim();
+  // Already an RGB triplet ("16 185 129") — pass through.
+  if (/^\d{1,3}\s+\d{1,3}\s+\d{1,3}$/.test(trimmed)) return trimmed;
+  // Hex: #rgb or #rrggbb
+  const hex = trimmed.replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(hex)) {
+    const r = parseInt(hex[0]! + hex[0], 16);
+    const g = parseInt(hex[1]! + hex[1], 16);
+    const b = parseInt(hex[2]! + hex[2], 16);
+    return `${r} ${g} ${b}`;
+  }
+  if (/^[0-9a-f]{6}$/i.test(hex)) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `${r} ${g} ${b}`;
+  }
+  // Fallback — return as-is. Browser will accept full CSS colors, and the
+  // Tailwind `rgb(var(--rup-accent) / <alpha>)` pattern will degrade gracefully
+  // (alpha modifiers won't work but the base color still renders).
+  return trimmed;
+}
+
+/**
+ * Pick a sensible foreground color for `accent` when the consumer didn't
+ * provide one. Computes relative luminance and returns white for dark accents,
+ * near-black for light accents. Falls back to white for non-triplet inputs.
+ */
+function defaultAccentFg(accentTriplet: string): string {
+  const m = accentTriplet.match(/^(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})$/);
+  if (!m) return '255 255 255';
+  const [r, g, b] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  // Perceived luminance — Rec. 709 coefficients.
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return lum > 0.6 ? '17 24 39' : '255 255 255';
 }
 
 /**
@@ -49,12 +114,23 @@ export interface VariantProps extends DropzoneOptions {
 export function containerStyleFromProps(
   props: VariantProps,
 ): React.CSSProperties | undefined {
-  const hasOverride = props.width !== undefined || props.style !== undefined;
-  if (!hasOverride) return undefined;
-  return {
+  const hasWidthOrStyle =
+    props.width !== undefined || props.style !== undefined;
+  const hasAccent = props.accent !== undefined;
+  if (!hasWidthOrStyle && !hasAccent) return undefined;
+  const style: Record<string, unknown> = {
     width: props.width,
     ...props.style,
   };
+  if (hasAccent) {
+    const accentTriplet = normalizeColorInput(props.accent!);
+    style['--rup-accent'] = accentTriplet;
+    style['--rup-accent-fg'] =
+      props.accentFg !== undefined
+        ? normalizeColorInput(props.accentFg)
+        : defaultAccentFg(accentTriplet);
+  }
+  return style as React.CSSProperties;
 }
 
 /**

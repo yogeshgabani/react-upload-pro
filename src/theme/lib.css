@@ -7,6 +7,42 @@
  * `react-upload-pro/styles.css` (which is the compiled output of this file).
  */
 
+/* Root-level defaults so consumers get the full accent / border / hover look
+   even without wrapping their app in <ThemeProvider>. ThemeProvider's
+   `[data-rup-root]` selectors below override these when present. Using
+   `:where(:root)` keeps specificity at 0 so any consumer-level override
+   (e.g. `:root { --rup-accent: 16 185 129 }`) still wins. */
+:where(:root) {
+  --rup-bg: 255 255 255;
+  --rup-fg: 17 24 39;
+  --rup-muted: 107 114 128;
+  --rup-border: 229 231 235;
+  --rup-accent: 79 70 229;
+  --rup-accent-fg: 255 255 255;
+  --rup-success: 34 197 94;
+  --rup-error: 239 68 68;
+  --rup-warning: 234 179 8;
+  --rup-radius: 0.75rem;
+  --rup-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 4px 12px -2px rgb(0 0 0 / 0.06);
+}
+
+/* Auto-dark via OS preference, again at zero specificity so a controlled
+   ThemeProvider on a light theme can still force light colors. */
+@media (prefers-color-scheme: dark) {
+  :where(:root) {
+    --rup-bg: 17 24 39;
+    --rup-fg: 243 244 246;
+    --rup-muted: 156 163 175;
+    --rup-border: 55 65 81;
+    --rup-accent: 129 140 248;
+    --rup-accent-fg: 17 24 39;
+    --rup-success: 74 222 128;
+    --rup-error: 248 113 113;
+    --rup-warning: 250 204 21;
+    --rup-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 4px 12px -2px rgb(0 0 0 / 0.5);
+  }
+}
+
 [data-rup-root],
 [data-rup-root][data-theme='light'] {
   --rup-bg: 255 255 255;

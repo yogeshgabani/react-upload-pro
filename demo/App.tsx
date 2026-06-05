@@ -340,6 +340,11 @@ function generateCode(s: PlaygroundState): string {
   if (s.progressSize > 0) props.push(`  progressSize={${s.progressSize}}`);
   if (s.width) props.push(`  width="${s.width}"`);
   if (s.height) props.push(`  height="${s.height}"`);
+  // Emit `accent` only when the user picked a non-default color, so simple
+  // copy-paste snippets stay clean for users who left the default indigo.
+  if (s.accentRgb !== accentPresets[0]!.rgb) {
+    props.push(`  accent="${rgbTripletToHex(s.accentRgb)}"`);
+  }
   if (s.mode !== "manual") props.push(`  mode="${s.mode}"`);
   if (s.strategy !== "parallel") props.push(`  strategy="${s.strategy}"`);
   if (s.concurrency !== 3) props.push(`  concurrency={${s.concurrency}}`);
@@ -784,6 +789,11 @@ export function App() {
     chunkSize: s.chunkSizeMB > 0 ? s.chunkSizeMB * 1024 * 1024 : undefined,
     label: s.label || undefined,
     hint: effectiveHint,
+    // Forward the accent in RGB-triplet form (variants accept hex, triplets,
+    // or any CSS color) so the live preview matches what the generated code
+    // emits. Default indigo is left implicit so the snippet stays clean.
+    accent:
+      s.accentRgb !== accentPresets[0]!.rgb ? s.accentRgb : undefined,
     onDrop: (a: unknown, r: unknown) =>
       console.log("drop", { accepted: a, rejected: r }),
     onDropRejected: handleDropRejected,
@@ -885,7 +895,7 @@ export function App() {
                       react-upload-pro
                     </h1>
                     <span className="hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 sm:inline dark:bg-indigo-950 dark:text-indigo-300">
-                      V0.1.1
+                      V0.1.2
                     </span>
                   </div>
                   <p className="hidden text-xs text-slate-500 sm:block dark:text-slate-400">
@@ -2030,9 +2040,33 @@ interface ReleaseEntry {
 
 const releases: ReleaseEntry[] = [
   {
-    version: "0.1.1",
+    version: "0.1.2",
     date: "2026-06-05",
     tag: "latest",
+    summary:
+      "Scoped `accent` prop on every variant + root-level CSS defaults so colors and hover effects render without `<ThemeProvider>`.",
+    changes: [
+      {
+        label: "Added",
+        items: [
+          "`accent` prop on every variant and `Dropzone` — accepts hex (`#10b981`), RGB triplet (`16 185 129`), or any CSS color. Drives borders, focus rings, progress fill, primary buttons, and hover states.",
+          "`accentFg` companion prop with auto-luminance-based default, so white text shows on dark accents and near-black on light ones.",
+          "`:root` CSS-variable defaults in the bundled stylesheet, plus an `@media (prefers-color-scheme: dark)` block — consumers who skip `<ThemeProvider>` now still get the full accent + border + hover look.",
+        ],
+      },
+      {
+        label: "Internal",
+        items: [
+          "New `normalizeColorInput()` helper parses hex / triplet / CSS color values into Tailwind's RGB-triplet form.",
+          "Playground's \"Get the code\" panel now emits the `accent` prop in the generated snippet when the user picks a non-default color.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.1.1",
+    date: "2026-06-05",
+    tag: "patch",
     summary:
       "Self-contained bundled stylesheet — no Tailwind required in consumer apps.",
     changes: [

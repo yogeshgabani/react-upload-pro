@@ -8,6 +8,37 @@ under the "Version history" panel.
 
 ---
 
+## 0.1.2 — 2026-06-05
+
+### Added
+
+- **`accent` prop on every variant + `Dropzone`.** Pass a hex string
+  (`'#10b981'`), an RGB triplet (`'16 185 129'`), or any CSS color and the
+  variant's border, focus ring, progress fill, primary buttons, and hover
+  states all update to match. The value is applied as an inline
+  `--rup-accent` CSS variable on the variant's outer wrapper, so it stays
+  scoped to that instance — multiple dropzones on the same page can each
+  have their own accent without leaking globally.
+- **`accentFg` prop** — companion to `accent`, controls the foreground color
+  used on top of accent surfaces (e.g. primary button text). Auto-derived
+  from `accent` via relative luminance when omitted, so white text shows on
+  dark accents and near-black on light ones.
+- **`:root` CSS-variable defaults** in the bundled stylesheet. Consumers who
+  don't wrap their app in `<ThemeProvider>` now still get the full accent /
+  border / hover look out of the box. Uses `:where(:root)` for zero
+  specificity so any consumer-level override (`:root { --rup-accent: … }`)
+  still wins, and includes an `@media (prefers-color-scheme: dark)` block
+  for automatic dark colors.
+
+### Internal
+
+- New `normalizeColorInput()` helper in `src/variants/types.ts` parses hex /
+  triplet / CSS color values into Tailwind's RGB-triplet form.
+- Playground's "Get the code" panel now emits the `accent` prop in the
+  generated snippet when the user picks a non-default color.
+
+---
+
 ## 0.1.1 — 2026-06-05
 
 ### Fixed
@@ -139,6 +170,7 @@ These items are tracked for future releases — feedback and PRs welcome:
 
 ---
 
-[unreleased]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.1...HEAD
+[unreleased]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/react-upload-pro/react-upload-pro/releases/tag/v0.1.0

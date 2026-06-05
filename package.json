@@ -1,6 +1,6 @@
 {
   "name": "react-upload-pro",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The most feature-rich React file upload & dropzone library. Drag & drop, chunk uploads, cloud adapters, 20+ UI variants, i18n, a11y, SSR-safe.",
   "keywords": [
     "react",

@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { useDropzone, type UseDropzoneReturn } from '../hooks/useDropzone';
 import type { DropzoneOptions, FileMetadata, UploadFile } from '../types';
 import { cn } from '../utils/cn';
+import { normalizeColorInput } from '../variants/types';
 import { UploadArea } from './UploadArea';
 import { UploadGallery, type GalleryLayout } from './UploadGallery';
 import type { ProgressVariant } from './UploadProgress';
@@ -38,6 +39,16 @@ export interface DropzoneProps extends DropzoneOptions {
   className?: string;
   /** Hint text under the icon. */
   hint?: ReactNode;
+  /**
+   * Override the accent color used by the dropzone. Drives borders, focus
+   * rings, progress fill, primary buttons, and hover states. Accepts a hex
+   * string (`'#10b981'`), RGB triplet (`'16 185 129'`), or any CSS color.
+   * Applied as an inline `--rup-accent` variable so it stays scoped to this
+   * dropzone instance.
+   */
+  accent?: string;
+  /** Foreground color used on top of `accent`. Same format as `accent`. */
+  accentFg?: string;
 }
 
 /**
@@ -67,6 +78,8 @@ export function Dropzone({
   style,
   className,
   hint,
+  accent,
+  accentFg,
   ...options
 }: DropzoneProps) {
   const api = useDropzone(options);
@@ -82,11 +95,22 @@ export function Dropzone({
 
   // width applies to the OUTER wrapper (drives the whole component's width);
   // height applies to the DROP SURFACE so the file gallery below stays at its
-  // natural height (otherwise a small height value squashes the list).
-  const containerStyle =
-    width !== undefined || style !== undefined
-      ? { width, ...style }
-      : undefined;
+  // natural height (otherwise a small height value squashes the list). The
+  // accent CSS variable is also set on the wrapper so it cascades to every
+  // child without leaking to siblings or the rest of the page.
+  const hasContainerOverride =
+    width !== undefined || style !== undefined || accent !== undefined;
+  let containerStyle: React.CSSProperties | undefined;
+  if (hasContainerOverride) {
+    const merged: Record<string, unknown> = { width, ...style };
+    if (accent !== undefined) {
+      merged['--rup-accent'] = normalizeColorInput(accent);
+      if (accentFg !== undefined) {
+        merged['--rup-accent-fg'] = normalizeColorInput(accentFg);
+      }
+    }
+    containerStyle = merged as React.CSSProperties;
+  }
   const surfaceStyle = height !== undefined ? { height } : undefined;
 
   return (
