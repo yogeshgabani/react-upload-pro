@@ -200,6 +200,15 @@ export default function MyUploader() {
           scrollAfter={5}      // gallery scrolls after 5 files
           maxHeight="320px"    // height of the scroll region
 
+          // ───── Theming ─────
+          // `accent` drives borders, focus rings, progress fill, primary
+          // buttons, and hover states. Accepts hex (`'#10b981'`), an RGB
+          // triplet (`'16 185 129'`), or any CSS color. Scoped to THIS
+          // dropzone — multiple instances on one page can have different
+          // accents without leaking globally.
+          accent="#10b981"
+          accentFg="#ffffff"   // optional — auto-derived from accent when omitted
+
           // ───── Copy ─────
           label="Drop your files here"
           hint="PNG, JPG, or PDF — up to 10 MB each, max 5 files"
@@ -723,18 +732,46 @@ import { ThemeProvider, useTheme } from "react-upload-pro";
 ### Custom accent color
 
 ```tsx
+{/* Hex string — most common */}
 <Dropzone endpoint="/api/upload" accent="#10b981" />
+
+{/* RGB triplet (the format CSS variables use internally) */}
+<Dropzone endpoint="/api/upload" accent="16 185 129" />
+
+{/* Any CSS color the browser understands */}
+<Dropzone endpoint="/api/upload" accent="rebeccapurple" />
+
+{/* With a custom foreground (button text on accent background).
+    Auto-derived from luminance when omitted. */}
+<Dropzone endpoint="/api/upload" accent="#facc15" accentFg="#000000" />
 ```
 
-Or via CSS variable on any ancestor:
+Each `accent` is **scoped to that dropzone instance** — the value is applied
+as an inline `--rup-accent` CSS variable on the component's outer wrapper,
+so multiple dropzones on the same page can each have their own accent
+without leaking globally.
+
+Need the accent to apply page-wide (e.g. share it with your own buttons)?
+Set it as a CSS variable on any ancestor:
 
 ```css
 :root {
   --rup-accent: 16 185 129; /* RGB triplet, no rgb() wrapper */
+  --rup-accent-fg: 255 255 255;
 }
 ```
 
-The accent drives buttons, progress, focus rings, and scrollbars.
+Every variant also accepts the same prop:
+
+```tsx
+import { MinimalGlass, BusinessCRM } from "react-upload-pro/variants";
+
+<MinimalGlass accent="#6366f1" endpoint="/api/upload" />
+<BusinessCRM accent="#10b981" endpoint="/api/upload" />
+```
+
+The accent drives borders, buttons, progress fill, focus rings, hover
+states, and scrollbars.
 
 ---
 
@@ -787,6 +824,8 @@ The accent drives buttons, progress, focus rings, and scrollbars.
 | `scrollAfter`      | `number`                                     | List becomes scrollable above this count                         |
 | `maxHeight`        | `string`                                     | CSS height of the scrollable region                              |
 | `width` / `height` | `string`                                     | Outer container CSS sizing                                       |
+| `accent`           | `string`                                     | Hex / RGB triplet / CSS color. Scoped to this instance.          |
+| `accentFg`         | `string`                                     | Foreground on accent surfaces. Auto-derived from `accent`.       |
 | `onDrop`           | `(accepted, rejected) => void`               |                                                                  |
 | `onDropRejected`   | `(errors) => void`                           |                                                                  |
 | `onUploadStart`    | `(file) => void`                             |                                                                  |
