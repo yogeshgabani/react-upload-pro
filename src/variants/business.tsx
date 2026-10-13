@@ -32,6 +32,8 @@ export function BusinessCRM({ className, label, hint, ...opts }: VariantProps) {
         {api.files.length > 0 && (
           <UploadGallery
             {...pickGalleryProps(opts, api)}
+            // The summary rail already has Start / Remove all buttons.
+            onUploadAll={undefined}
             files={api.files}
             searchable
             filterable

@@ -11,6 +11,8 @@ export interface UploadAreaProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode;
   /** Icon override. */
   icon?: ReactNode;
+  /** Main line of text. Default: "Drag & drop files or click to browse". */
+  label?: ReactNode;
   /** Secondary descriptive line. */
   description?: ReactNode;
 }
@@ -24,6 +26,7 @@ export function UploadArea({
   disabled,
   children,
   icon,
+  label,
   description,
   className,
   ...rest
@@ -52,7 +55,7 @@ export function UploadArea({
             {icon ?? <UploadIcon width={24} height={24} />}
           </div>
           <p className="text-sm font-medium text-rup-fg">
-            {state === 'drag-accept' ? t.dropHere : t.dragOrClick}
+            {state === 'drag-accept' ? t.dropHere : (label ?? t.dragOrClick)}
           </p>
           {description && <p className="text-xs text-rup-muted">{description}</p>}
         </>

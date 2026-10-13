@@ -8,38 +8,49 @@ body {
 
 /* Sensible defaults so the page-level scrollbar matches the inner
    `.rup-scrollbar` chrome even before App.tsx's useEffect mirrors the
-   accent + border onto :root. Dark-mode default mirrors what App.tsx
-   sets for the dark theme (slate-700 = 55 65 81). */
+   accent, border, and page background onto :root. Dark-mode defaults
+   mirror what App.tsx sets for the dark theme (slate-700 border, slate-900
+   page). The page background matters because the viewport scrollbar's
+   translucent track is painted on top of it. */
 :root {
   --rup-accent: 79 70 229;
   --rup-border: 229 231 235;
+  background-color: rgb(248 250 252);
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --rup-border: 55 65 81;
+    background-color: rgb(15 23 42);
+    color-scheme: dark;
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Global themed scrollbar — every scrollable surface (page body, modals,
-   code blocks, file gallery, …) uses the same chrome. Both Firefox
-   (`scrollbar-*`) and Chromium/Safari (`::-webkit-scrollbar-*`) are covered.
+   Global themed scrollbar — every scrollable surface (page body, settings
+   sidebar, code blocks, version history, file gallery, modals, …) uses the
+   same chrome: 8px, rounded accent thumb, faint border-colored track. Same
+   tokens and same split as the library's `.rup-scrollbar`, so both match.
+
+   Chromium and Safari use the `::-webkit-scrollbar-*` rules; the bare
+   selector matches every scrollbar on the page, including the page-level
+   one. Firefox gets the standard properties instead. Those stay Firefox-only
+   because Chromium 121+ ignores the pseudo-elements when they're set and
+   draws its own scrollbar (with arrow buttons on Windows).
 
    `--rup-accent` is mirrored onto :root by App.tsx whenever the accent
    picker changes, so all scrollbars update live across the whole page.
    ───────────────────────────────────────────────────────────────────────── */
 
-/* Firefox / standards-track */
-html,
-body {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--rup-accent) / 0.7) rgb(var(--rup-border) / 0.4);
+@supports not selector(::-webkit-scrollbar) {
+  /* scrollbar-width doesn't inherit, hence the universal selector. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--rup-accent) / 0.7) rgb(var(--rup-border) / 0.4);
+  }
 }
 
-/* Webkit — the bare ::-webkit-scrollbar selector matches every scrollbar on
-   the page including the page-level html/body one, so styling stays
-   identical for inner and outer scroll areas. */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

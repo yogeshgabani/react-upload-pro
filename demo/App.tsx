@@ -31,7 +31,7 @@ import {
   MinimalModern,
   MinimalNeumorphic,
 } from "react-upload-pro/variants";
-import { createMockAdapter } from "./mockAdapter";
+import { createMockAdapter } from "react-upload-pro/cloud";
 
 // ────────── Variant registry ──────────
 
@@ -250,6 +250,7 @@ interface PlaygroundState {
   directory: boolean;
   clipboard: boolean;
   rejectDuplicates: boolean;
+  compressImages: boolean;
   disabled: boolean;
   previewable: boolean;
   editable: boolean;
@@ -284,6 +285,7 @@ const defaultState: PlaygroundState = {
   directory: false,
   clipboard: true,
   rejectDuplicates: false,
+  compressImages: false,
   disabled: false,
   previewable: true,
   editable: true,
@@ -328,6 +330,7 @@ function generateCode(s: PlaygroundState): string {
   if (s.directory) props.push(`  directory`);
   if (!s.clipboard) props.push(`  clipboard={false}`);
   if (s.rejectDuplicates) props.push(`  rejectDuplicates`);
+  if (s.compressImages) props.push(`  compressImages`);
   if (s.disabled) props.push(`  disabled`);
   if (s.previewable) props.push(`  previewable`);
   if (s.editable) props.push(`  editable`);
@@ -354,11 +357,18 @@ function generateCode(s: PlaygroundState): string {
   if (s.label) props.push(`  label="${s.label}"`);
   const hint = s.hint.trim() || deriveHint(s.accept, s.maxSizeMB);
   if (hint) props.push(`  hint="${hint}"`);
-  props.push(`  onUploadSuccess={(file) => console.log('done', file)}`);
+  props.push(`  onUploadSuccess={(file) => console.log('done', file.url)}`);
 
+  const cloudImport = s.simulateUploads
+    ? `import { createMockAdapter } from 'react-upload-pro/cloud';
+`
+    : "";
   const mockImport = s.simulateUploads
-    ? `\n// Playground mock; remove and use a real endpoint or cloud adapter in production.
-const mockAdapter = { name: 'mock', upload: async () => ({ url: 'mock://' }) };\n`
+    ? `
+// Fake uploads so you can try it without a backend. In production, replace
+// cloud={mockAdapter} with endpoint="/api/upload" or a real cloud adapter.
+const mockAdapter = createMockAdapter();
+`
     : "";
 
   const errorImport = s.showErrorModal
@@ -379,7 +389,7 @@ const mockAdapter = { name: 'mock', upload: async () => ({ url: 'mock://' }) };\
   return `import * as React from 'react';
 import { ThemeProvider, I18nProvider${errorImport} } from 'react-upload-pro';
 import { ${s.variant} } from 'react-upload-pro/variants';
-import 'react-upload-pro/styles.css';
+${cloudImport}import 'react-upload-pro/styles.css';
 ${mockImport}
 export function MyUploader() {
 ${errorStateBlock}  return (
@@ -770,6 +780,7 @@ export function App() {
     directory: s.directory,
     clipboard: s.clipboard,
     rejectDuplicates: s.rejectDuplicates,
+    compressImages: s.compressImages,
     disabled: s.disabled,
     previewable: s.previewable,
     editable: s.editable,
@@ -825,6 +836,9 @@ export function App() {
   }, [s.accentRgb]);
 
   // Track color follows the resolved theme — light slate-200, dark slate-700.
+  // The page background and color-scheme follow it too: the theme otherwise
+  // only reaches the app wrapper, and the page scrollbar's translucent track
+  // is painted over <html>, so it looked light-gray in dark mode.
   // Resolved on the fly because 'auto' depends on prefers-color-scheme and we
   // need to react if the OS theme changes while the user is on 'auto'.
   useEffect(() => {
@@ -839,6 +853,9 @@ export function App() {
         "--rup-border",
         isDark ? "55 65 81" : "229 231 235",
       );
+      // Same colors as the wrapper's bg-slate-50 / dark:bg-slate-900.
+      root.style.backgroundColor = isDark ? "rgb(15 23 42)" : "rgb(248 250 252)";
+      root.style.colorScheme = isDark ? "dark" : "light";
     };
     apply();
     if (s.theme === "auto" && typeof window !== "undefined") {
@@ -895,7 +912,7 @@ export function App() {
                       react-upload-pro
                     </h1>
                     <span className="hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 sm:inline dark:bg-indigo-950 dark:text-indigo-300">
-                      V0.1.2
+                      V0.2.0
                     </span>
                   </div>
                   <p className="hidden text-xs text-slate-500 sm:block dark:text-slate-400">
@@ -945,7 +962,7 @@ export function App() {
                   <option value="fa">FA · فارسی</option>
                 </Select>
                 <a
-                  href="https://github.com/react-upload-pro/react-upload-pro"
+                  href="https://github.com/yogeshgabani/react-upload-pro"
                   target="_blank"
                   rel="noreferrer"
                   className="hidden items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:inline-flex"
@@ -1503,6 +1520,12 @@ function FilesTab({
           onChange={(v) => set("rejectDuplicates", v)}
         />
         <Toggle
+          label={dm.compressImages}
+          description={dm.compressImagesDesc}
+          checked={s.compressImages}
+          onChange={(v) => set("compressImages", v)}
+        />
+        <Toggle
           label={dm.disabled}
           checked={s.disabled}
           onChange={(v) => set("disabled", v)}
@@ -2030,6 +2053,18 @@ function ScrollToTop({ dm }: { dm: DemoMessages }) {
  * release timeline without leaving the playground. Keep this list in sync
  * whenever a new release lands.
  */
+/**
+ * Release notes are plain text with `code` spans. Escape first so names like
+ * `<Dropzone>` render as text instead of being parsed as unknown HTML tags.
+ */
+function inlineCodeHtml(text: string): string {
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return escaped.replace(
+    /`([^`]+)`/g,
+    '<code class="rounded bg-slate-100 px-1 py-0.5 text-[11px] dark:bg-slate-800">$1</code>',
+  );
+}
+
 interface ReleaseEntry {
   version: string;
   date: string;
@@ -2040,9 +2075,42 @@ interface ReleaseEntry {
 
 const releases: ReleaseEntry[] = [
   {
+    version: "0.2.0",
+    date: "2026-10-13",
+    tag: "latest",
+    summary:
+      "Client-side image compression, a mock adapter to try the library without a backend, an Upload button for manual mode, and `file.url` on every successful upload.",
+    changes: [
+      {
+        label: "Added",
+        items: [
+          "`compressImages` option and `compressImage()` helper — resize and re-encode JPEG / PNG / WebP in the browser before validation and upload.",
+          "`createMockAdapter()` in `react-upload-pro/cloud` — fake uploads with real progress, so you can try the UI with no backend.",
+          "`<Dropzone>` shows Upload / Remove all buttons in `manual` mode (hide them with `hideActions`).",
+          "`label` prop on `<Dropzone>` and `<UploadArea>`.",
+          "`file.url` — the uploaded file's URL, read from the adapter result or the endpoint's JSON response.",
+          "`isUploading` and `isDragActive` (react-dropzone-style alias) on `useDropzone`.",
+        ],
+      },
+      {
+        label: "Fixed",
+        items: [
+          "`concurrency` is now respected when files are added while an upload is already running.",
+          "`mode=\"queue\"` starts automatically and uploads one file at a time, as documented.",
+          "`mode=\"auto\"` waits briefly so quick successive drops start as one batch, as documented.",
+          "Removing a file mid-upload no longer stalls the rest of the queue.",
+          "Object-form `accept` (`{ 'image/*': ['.png'] }`) now filters the native file picker too.",
+          "TypeScript types resolve correctly for CommonJS consumers.",
+          "`.rup-scrollbar` now looks the same in every browser — Chromium no longer swaps in its own scrollbar with arrow buttons.",
+          "npm homepage, repository, and issue links now point to the real GitHub repo and live demo.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.1.2",
     date: "2026-06-05",
-    tag: "latest",
+    tag: "patch",
     summary:
       "Scoped `accent` prop on every variant + root-level CSS defaults so colors and hover effects render without `<ThemeProvider>`.",
     changes: [
@@ -2200,7 +2268,7 @@ function VersionHistory() {
               </p>
             </div>
             {/* <a
-              href="https://github.com/react-upload-pro/react-upload-pro/blob/main/CHANGELOG.md"
+              href="https://github.com/yogeshgabani/react-upload-pro/blob/main/CHANGELOG.md"
               target="_blank"
               rel="noreferrer noopener"
               className="inline-flex items-center gap-1 text-xs font-medium text-rup-accent hover:underline sm:text-sm"
@@ -2254,9 +2322,10 @@ function VersionHistory() {
 
                   {isOpen && (
                     <div className="mt-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/60">
-                      <p className="mb-3 text-sm text-slate-700 dark:text-slate-200">
-                        {release.summary}
-                      </p>
+                      <p
+                        className="mb-3 text-sm text-slate-700 dark:text-slate-200"
+                        dangerouslySetInnerHTML={{ __html: inlineCodeHtml(release.summary) }}
+                      />
                       <div className="space-y-3">
                         {release.changes.map((group) => (
                           <div key={group.label}>
@@ -2268,12 +2337,7 @@ function VersionHistory() {
                                 <li
                                   key={i}
                                   className="list-disc marker:text-slate-400"
-                                  dangerouslySetInnerHTML={{
-                                    __html: item.replace(
-                                      /`([^`]+)`/g,
-                                      '<code class="rounded bg-slate-100 px-1 py-0.5 text-[11px] dark:bg-slate-800">$1</code>',
-                                    ),
-                                  }}
+                                  dangerouslySetInnerHTML={{ __html: inlineCodeHtml(item) }}
                                 />
                               ))}
                             </ul>
@@ -2326,7 +2390,7 @@ function Footer({ totalCount, dm }: { totalCount: number; dm: DemoMessages }) {
 
               <div className="flex flex-wrap gap-2">
                 <FooterAction
-                  href="https://github.com/react-upload-pro/react-upload-pro"
+                  href="https://github.com/yogeshgabani/react-upload-pro"
                   external
                 >
                   <svg

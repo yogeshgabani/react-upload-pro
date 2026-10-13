@@ -1,4 +1,5 @@
 export * from './Dropzone';
+export * from './UploadActions';
 export * from './UploadArea';
 export * from './UploadButton';
 export * from './UploadProgress';

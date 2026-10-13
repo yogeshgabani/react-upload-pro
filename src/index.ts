@@ -31,6 +31,7 @@ export type {
   ChunkState,
   FileMetadata,
   Accept,
+  ImageCompressionOptions,
   Locale,
   Translations,
   Theme,
@@ -61,5 +62,6 @@ export {
   wrapFile,
   generatePreview,
   revokePreview,
+  compressImage,
   cn,
 } from './utils';

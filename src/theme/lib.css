@@ -86,10 +86,16 @@
 }
 
 /* Themed scrollbar used by bounded gallery lists and any consumer who opts in
-   via the `rup-scrollbar` utility class. */
-.rup-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--rup-accent) / 0.7) transparent;
+   via the `rup-scrollbar` utility class. Chromium and Safari get the
+   `::-webkit-scrollbar` styling below (8px, rounded accent thumb, no arrow
+   buttons). Firefox has no such pseudo-elements, so it gets the standard
+   properties instead — they're kept Firefox-only because Chromium 121+
+   ignores the pseudo-elements whenever they are set. */
+@supports not selector(::-webkit-scrollbar) {
+  .rup-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--rup-accent) / 0.7) rgb(var(--rup-border) / 0.4);
+  }
 }
 
 .rup-scrollbar::-webkit-scrollbar {

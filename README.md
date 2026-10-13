@@ -2,14 +2,25 @@
 
 # react-upload-pro
 
-**The most feature-rich React file upload & dropzone library.**
+**Drop-in React file upload component — drag & drop, progress bars, previews, retries, image compression, and direct-to-cloud uploads.**
 
 Drag & drop · chunk uploads · cloud adapters · 21+ UI variants · i18n in 23 locales · a11y · SSR-safe · TypeScript-first.
 
 [![npm](https://img.shields.io/npm/v/react-upload-pro.svg?color=4f46e5&style=flat-square)](https://www.npmjs.com/package/react-upload-pro)
+[![live demo](https://img.shields.io/badge/live%20demo-playground-ec4899?style=flat-square)](https://react-upload-pro.netlify.app/)
 [![types](https://img.shields.io/badge/types-included-3178c6?style=flat-square)](#typescript)
 [![license](https://img.shields.io/badge/license-MIT-emerald?style=flat-square)](./LICENSE)
 [![bundle](https://img.shields.io/badge/tree--shakable-✓-10b981?style=flat-square)](#performance)
+
+### [▶ Open the live demo & playground](https://react-upload-pro.netlify.app/)
+
+Try every variant and option in the browser, then copy the generated code.
+
+<a href="https://react-upload-pro.netlify.app/">
+  <img src="https://raw.githubusercontent.com/yogeshgabani/react-upload-pro/main/.github/assets/demo.png" alt="react-upload-pro playground: four images uploading with thumbnails, progress bars, speed and ETA" width="860" />
+</a>
+
+[Live demo](https://react-upload-pro.netlify.app/) · [Quick start](#quick-start-60-seconds-no-backend-needed) · [API reference](https://github.com/yogeshgabani/react-upload-pro/blob/main/docs/API.md) · [Changelog](https://github.com/yogeshgabani/react-upload-pro/blob/main/CHANGELOG.md) · [Report a bug](https://github.com/yogeshgabani/react-upload-pro/issues)
 
 </div>
 
@@ -17,17 +28,23 @@ Drag & drop · chunk uploads · cloud adapters · 21+ UI variants · i18n in 23 
 
 ## Table of contents
 
+- [Quick start (60 seconds, no backend needed)](#quick-start-60-seconds-no-backend-needed)
+- [Connect your server](#connect-your-server)
 - [Why react-upload-pro?](#why-react-upload-pro)
+- [Migrating from react-dropzone](#migrating-from-react-dropzone)
 - [Install](#install)
-- [30-second example](#30-second-example)
+- [Import the styles](#import-the-styles)
+- [Full sample with comments](#full-sample-with-comments)
 - [Step-by-step setup](#step-by-step-setup)
   - [1. Vite + React](#1-vite--react)
   - [2. Next.js (App Router)](#2-nextjs-app-router)
   - [3. Create React App](#3-create-react-app)
-- [Tailwind setup](#tailwind-setup)
+- [Tailwind setup (optional)](#tailwind-setup-optional)
 - [Core usage](#core-usage)
 - [Pre-built variants](#pre-built-variants)
 - [Hooks-first usage](#hooks-first-usage)
+- [Image compression](#image-compression)
+- [Custom upload function (fetch / axios)](#custom-upload-function-fetch--axios)
 - [Cloud adapters](#cloud-adapters)
 - [Validation](#validation)
 - [Internationalization (i18n)](#internationalization-i18n)
@@ -42,13 +59,100 @@ Drag & drop · chunk uploads · cloud adapters · 21+ UI variants · i18n in 23 
 
 ---
 
+## Quick start (60 seconds, no backend needed)
+
+```bash
+npm install react-upload-pro
+```
+
+```tsx
+import { Dropzone } from "react-upload-pro";
+import { createMockAdapter } from "react-upload-pro/cloud";
+import "react-upload-pro/styles.css";
+
+// Fake uploads with real progress — swap for your server later.
+const mock = createMockAdapter();
+
+export default function App() {
+  return (
+    <Dropzone
+      cloud={mock}
+      mode="auto" // start uploading as soon as files are dropped
+      accept="image/*,application/pdf"
+      maxSize={10 * 1024 * 1024} // 10 MB
+      previewable
+      onUploadSuccess={(file) => console.log("uploaded", file.url)}
+    />
+  );
+}
+```
+
+Drop a few files: you get thumbnails, progress bars, speed, ETA, retry and remove buttons, and a fullscreen preview. Nothing leaves the browser.
+
+> Prefer clicking around first? The [live playground](https://react-upload-pro.netlify.app/) lets you change every option and copy the matching code.
+
+---
+
+## Connect your server
+
+Replace `cloud={mock}` with `endpoint`. Each file is sent as a `multipart/form-data` `POST` with the file in a field named `file`:
+
+```tsx
+<Dropzone
+  endpoint="/api/upload"
+  mode="auto"
+  onUploadSuccess={(file) => console.log(file.url)} // read from your JSON response
+/>
+```
+
+Any backend works. A minimal Express server:
+
+```js
+// server.js — npm install express multer
+import express from "express";
+import multer from "multer";
+
+const upload = multer({ dest: "uploads/" });
+const app = express();
+
+app.use("/uploads", express.static("uploads"));
+app.post("/api/upload", upload.single("file"), (req, res) => {
+  // Return a URL and it shows up as `file.url` on the client.
+  res.json({ url: `/uploads/${req.file.filename}` });
+});
+
+app.listen(3001);
+```
+
+Running Vite on another port? Proxy the API in `vite.config.ts`: `server: { proxy: { "/api": "http://localhost:3001" } }`.
+
+`file.url` is read from `url`, `secure_url`, `location`, `fileUrl` or `file_url` in the JSON response (also when nested under `data`), or from a plain-text response that is itself a URL. The full response is always available as `file.response`.
+
+Next.js route handler, S3 presigned URLs, and other backends are covered in [Step-by-step setup](#step-by-step-setup) and [Cloud adapters](#cloud-adapters).
+
+---
+
 ## Why react-upload-pro?
 
 `react-dropzone` stops at "drop files, get a callback". `react-upload-pro` ships everything you need to ship a real upload feature:
 
+|                                                      | react-dropzone    | react-upload-pro            |
+| ---------------------------------------------------- | ----------------- | --------------------------- |
+| Drag & drop, click to browse, hook API               | ✅                | ✅                          |
+| Type / size / count validation                       | ✅                | ✅ + magic-number checks    |
+| Uploads to your server with progress, speed, ETA     | ❌ bring your own | ✅                          |
+| Retries, pause / resume / cancel, chunked uploads    | ❌                | ✅                          |
+| Ready-made UI: file list, previews, progress bars    | ❌                | ✅ 21+ variants             |
+| Direct to S3 / Cloudinary / Firebase / Supabase / …  | ❌                | ✅                          |
+| Client-side image compression                        | ❌                | ✅                          |
+| Built-in translations                                | ❌                | ✅ 23 locales               |
+
+Everything in the box:
+
 - ✅ **Inputs** — drag/drop, click, paste from clipboard, folder upload (recursive)
 - ✅ **Upload engine** — `instant` / `manual` / `auto` / `queue` modes, parallel + sequential, chunked, pause / resume / retry / cancel
-- ✅ **Cloud adapters** — AWS S3 (presigned), Cloudinary, Firebase Storage, Supabase, DigitalOcean Spaces, Azure Blob, GCS
+- ✅ **Cloud adapters** — AWS S3 (presigned), Cloudinary, Firebase Storage, Supabase, DigitalOcean Spaces, Azure Blob, GCS, plus a mock adapter for demos and tests
+- ✅ **Image compression** — resize and re-encode JPEG / PNG / WebP in the browser before upload
 - ✅ **Validation** — MIME, extension, size (min/max), max files, duplicates, magic-number signatures, custom async validators
 - ✅ **Preview** — image / video / audio / PDF / text / Office (icon) with zoom & rotate
 - ✅ **Progress** — bar / circle / striped, per-file + aggregate, EWMA speed + ETA
@@ -56,8 +160,46 @@ Drag & drop · chunk uploads · cloud adapters · 21+ UI variants · i18n in 23 
 - ✅ **a11y** — ARIA roles, keyboard nav, focus rings, RTL
 - ✅ **i18n** — 23 built-in locales (en, hi, gu, fr, de, ar, zh, es, pt, ru, ja, ko, it, tr, id, bn, ur, nl, pl, vi, th, he, fa) + custom messages
 - ✅ **Theming** — light / dark / auto with CSS variables and a Tailwind preset
-- ✅ **Framework agnostic** — works with Axios / Fetch / GraphQL / REST via custom `getUploadToken`
+- ✅ **Framework agnostic** — works with Axios / Fetch / GraphQL / REST via a [custom upload function](#custom-upload-function-fetch--axios)
 - ✅ **Tree-shakeable** — core ships without `framer-motion` or any cloud SDK
+
+---
+
+## Migrating from react-dropzone
+
+`useDropzone` has the same shape — `getRootProps`, `getInputProps`, `isDragActive`, `open`, and the same `accept` object format — so most components move over by changing the import:
+
+```tsx
+// Before
+import { useDropzone } from "react-dropzone";
+
+// After — same hook, plus uploads, progress and retries
+import { useDropzone } from "react-upload-pro";
+
+function Uploader() {
+  const { getRootProps, getInputProps, isDragActive, files, start } = useDropzone({
+    accept: { "image/*": [".png", ".jpg"] },
+    maxSize: 5 * 1024 * 1024,
+    endpoint: "/api/upload", // new: where files go
+  });
+
+  return (
+    <div>
+      <div {...getRootProps()}>
+        <input {...getInputProps()} />
+        {isDragActive ? "Drop here…" : "Drag files here, or click to select"}
+      </div>
+      <button onClick={() => start()}>Upload {files.length} files</button>
+    </div>
+  );
+}
+```
+
+Differences to know about:
+
+- `onDrop` receives `(accepted: UploadFile[], rejected: ValidationError[])`. Each `UploadFile` wraps the native `File` as `.file` and adds `status`, `progress`, `url`, and more.
+- The hook keeps the list of files for you (`files`, `remove`, `removeAll`), so you don't need your own `useState`.
+- Uploads start when you call `start()`, or automatically with `mode: "auto"`.
 
 ---
 
@@ -78,34 +220,6 @@ bun add react-upload-pro
 ```
 
 Peer deps: `react >= 17`, `react-dom >= 17`. `framer-motion` is optional (only some animated variants need it).
-
----
-
-## 30-second example
-
-```tsx
-import { Dropzone, ThemeProvider } from "react-upload-pro";
-import "react-upload-pro/styles.css";
-
-export default function App() {
-  return (
-    <ThemeProvider defaultTheme="auto">
-      <Dropzone
-        endpoint="/api/upload"
-        accept="image/*,application/pdf"
-        maxSize={10 * 1024 * 1024} // 10 MB
-        maxFiles={20}
-        mode="auto"
-        retries={3}
-        onUploadSuccess={(file) => console.log("done", file)}
-        onUploadError={(file, err) => console.error(err)}
-      />
-    </ThemeProvider>
-  );
-}
-```
-
-That's it. The component handles drag/drop, validation, progress bars, retries, previews, and gallery rendering.
 
 ---
 
@@ -134,7 +248,7 @@ import "react-upload-pro/styles.css";
 The stylesheet is **self-contained** — it ships every utility class the
 components use, so you do **not** need Tailwind, PostCSS, or any extra build
 step in your app to get the demo look. If you also use Tailwind in your
-project, see [Tailwind setup](#tailwind-setup) below to share design tokens.
+project, see [Tailwind setup](#tailwind-setup-optional) below to share design tokens.
 
 ---
 
@@ -185,6 +299,7 @@ export default function MyUploader() {
           maxFiles={5}                         // total file cap
           multiple                             // allow picking many at once
           rejectDuplicates                     // skip identical files
+          compressImages                       // shrink big photos before upload
 
           // ───── Upload behaviour ─────
           mode="auto"          // 'manual' | 'instant' | 'auto' | 'queue'
@@ -221,8 +336,8 @@ export default function MyUploader() {
           onUploadStart={(file: UploadFile) =>
             console.log("uploading", file.name)
           }
-          onUploadProgress={(file, progress) =>
-            console.log(`${file.name}: ${progress.percent}%`)
+          onUploadProgress={(file) =>
+            console.log(`${file.name}: ${Math.round(file.progress * 100)}%`)
           }
           onUploadSuccess={(file) =>
             console.log("✅ done →", file.url)
@@ -256,6 +371,7 @@ export default function MyUploader() {
 - 🔁 Automatic retries with exponential backoff
 - 👁️ Fullscreen preview for images, PDFs, video, audio
 - ✏️ Inline rename + metadata edit modal
+- 🗜️ Big photos resized in the browser before they upload
 - 🌗 Light / dark / auto themes with a single prop
 - 🌐 23-locale i18n with RTL support
 
@@ -293,6 +409,8 @@ export default function App() {
 npm run dev   # → http://localhost:5173
 ```
 
+Dropped files wait in the list until the user clicks **Upload** (`mode="manual"`, the default). Add `mode="auto"` to upload as soon as files are dropped. Don't have a server yet? Use [`createMockAdapter()`](#quick-start-60-seconds-no-backend-needed).
+
 ### 2. Next.js (App Router)
 
 ```bash
@@ -315,6 +433,7 @@ export default function UploadPage() {
         endpoint="/api/upload"
         accept="image/*"
         maxSize={10 * 1024 * 1024}
+        mode="auto"
       />
     </ThemeProvider>
   );
@@ -389,6 +508,8 @@ so picking a new accent updates your custom UI too.
 <Dropzone endpoint="/api/upload" />
 ```
 
+Files are listed with an **Upload** button underneath. Pass `mode="auto"` to skip the button and upload right away.
+
 ### Real-world example
 
 ```tsx
@@ -404,6 +525,7 @@ export function ProfilePictureUploader() {
       maxFiles={1}
       multiple={false}
       mode="instant" // upload immediately on drop
+      compressImages={{ maxWidth: 512, maxHeight: 512 }}
       previewable // eye icon → fullscreen preview
       editable // pencil icon → rename + tag
       retries={2}
@@ -451,7 +573,7 @@ export function ProfilePictureUploader() {
 
 ## Pre-built variants
 
-21+ designs grouped into 5 categories. Every variant accepts the same options as `Dropzone`, so any feature works on any look.
+21+ designs grouped into 5 categories. Every variant accepts the same options as `Dropzone`, so any feature works on any look. **[See them all in the live playground →](https://react-upload-pro.netlify.app/)**
 
 ```tsx
 import {
@@ -461,7 +583,7 @@ import {
   LayoutModal,
 } from "react-upload-pro/variants";
 
-<MinimalGlass endpoint="/api/upload" accent="#6366f1" />;
+<MinimalGlass endpoint="/api/upload" mode="auto" accent="#6366f1" />;
 ```
 
 | Category       | Variants                                                                                 |
@@ -472,7 +594,7 @@ import {
 | **Enterprise** | `EnterpriseDocs`, `EnterpriseTeam`, `EnterpriseMediaLibrary`, `EnterpriseFullscreen`     |
 | **Layouts**    | `LayoutBox`, `LayoutCard`, `LayoutSidebar`, `LayoutModal`, `LayoutFloating`              |
 
-Try them all live in the playground: `npm run dev` after cloning.
+In `manual` mode (the default) each variant shows **Remove all / Upload** buttons under its file list; `hideActions` turns them off. `CreativeAvatar` uploads as soon as a picture is picked.
 
 ---
 
@@ -496,7 +618,7 @@ function MyUploader() {
     resume,
     remove,
     retry,
-    clear,
+    removeAll,
   } = useDropzone({
     endpoint: "/api/upload",
     accept: { "image/*": [".png", ".jpg", ".webp"] },
@@ -523,20 +645,75 @@ function MyUploader() {
         files={files}
         onRemove={(f) => remove(f.id)}
         onRetry={(f) => retry(f.id)}
+        onPause={(f) => pause(f.id)}
+        onResume={(f) => resume(f.id)}
       />
 
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => start()} disabled={isUploading}>
           Upload
         </button>
-        <button onClick={pause}>Pause</button>
-        <button onClick={resume}>Resume</button>
-        <button onClick={clear}>Clear</button>
+        <button onClick={removeAll}>Clear</button>
       </div>
     </div>
   );
 }
 ```
+
+`pause`, `resume`, `retry`, `cancel` and `remove` take a file id. Want the stock buttons instead of your own? Render `<UploadActions files={files} onUpload={start} onRemoveAll={removeAll} />`.
+
+---
+
+## Image compression
+
+Phone photos are often 3–10 MB. Turn on `compressImages` and JPEG / PNG / WebP files are resized and re-encoded in the browser **before** they are validated and uploaded — so a 6 MB photo can still pass `maxSize={2 * 1024 * 1024}`.
+
+```tsx
+// Defaults: longest side 1920px, quality 0.8, same format
+<Dropzone endpoint="/api/upload" compressImages />
+
+// Or tune it
+<Dropzone
+  endpoint="/api/upload"
+  compressImages={{ maxWidth: 1280, maxHeight: 1280, quality: 0.7, mimeType: "image/webp" }}
+/>
+```
+
+GIF, SVG, and non-image files pass through untouched, and an image is never replaced by a bigger one. The same logic is available on its own:
+
+```ts
+import { compressImage } from "react-upload-pro";
+
+const smaller = await compressImage(file, { maxWidth: 800 });
+```
+
+---
+
+## Custom upload function (fetch / axios)
+
+Need your own request logic — axios interceptors, GraphQL, a signed URL from your API? Pass any object with an `upload` function as `cloud`. Report progress with `onProgress` and honour `signal` so cancel / pause work:
+
+```tsx
+import axios from "axios";
+import { Dropzone, type CloudAdapter } from "react-upload-pro";
+
+const axiosUpload: CloudAdapter = {
+  name: "axios",
+  async upload(file, { onProgress, signal }) {
+    const body = new FormData();
+    body.append("file", file.file, file.name);
+    const res = await axios.post("/api/upload", body, {
+      signal,
+      onUploadProgress: (e) => onProgress(e.loaded, e.total ?? file.size),
+    });
+    return { url: res.data.url }; // becomes file.url
+  },
+};
+
+<Dropzone cloud={axiosUpload} mode="auto" />;
+```
+
+To have a failure retried (`retries`), throw `{ code: "network", message: "…", retryable: true }`.
 
 ---
 
@@ -593,10 +770,13 @@ import {
   createDigitalOceanAdapter,
   createAzureBlobAdapter,
   createGcsAdapter,
+  createMockAdapter, // fake uploads for demos, Storybook and tests
 } from "react-upload-pro/cloud";
 ```
 
-Every adapter has the same shape — pass it to `cloud:` on `Dropzone` or `useDropzone`.
+Every adapter has the same shape — pass it to `cloud:` on `Dropzone` or `useDropzone`. See [`docs/cloud.md`](https://github.com/yogeshgabani/react-upload-pro/blob/main/docs/cloud.md) for each adapter's options.
+
+`createMockAdapter({ durationMs, failRate })` simulates an upload with real progress, cancel and retry — handy for trying the UI, Storybook stories, and tests.
 
 ---
 
@@ -722,9 +902,8 @@ const isRtl = rtlLocales.has(currentLocale);
 ```tsx
 import { ThemeProvider, useTheme } from "react-upload-pro";
 
+// defaultTheme: 'light' | 'dark' | 'auto'
 <ThemeProvider defaultTheme="auto">
-  {" "}
-  {/* 'light' | 'dark' | 'auto' */}
   <Dropzone endpoint="/api/upload" />
 </ThemeProvider>;
 ```
@@ -788,10 +967,10 @@ states, and scrollbars.
 
 ### Mode cheat sheet
 
-- **`manual`** — files queue up; user clicks an "Upload" button to start
+- **`manual`** — files queue up; the user clicks the built-in **Upload** button (or you call `start()`)
 - **`instant`** — each file starts uploading the moment it's dropped
-- **`auto`** — same as `instant`, but adds a small debounce so multi-drop bursts batch nicely
-- **`queue`** — strictly one at a time, in drop order, ignoring `concurrency`
+- **`auto`** — like `instant`, but waits 100 ms so several quick drops or pastes start as one batch
+- **`queue`** — starts automatically and uploads strictly one at a time, in drop order, ignoring `concurrency`
 
 ---
 
@@ -799,52 +978,57 @@ states, and scrollbars.
 
 ### `<Dropzone>` (most common)
 
-| Prop               | Type                                         | Notes                                                            |
-| ------------------ | -------------------------------------------- | ---------------------------------------------------------------- |
-| `endpoint`         | `string`                                     | URL for the multipart `POST`. Use `cloud:` for direct-to-S3 etc. |
-| `cloud`            | `CloudAdapter`                               | Direct cloud upload (mutually exclusive with `endpoint`)         |
-| `accept`           | `string` &#x7C; `Accept`                     | `"image/*"`, `".pdf,.docx"`, or `{ 'image/*': ['.png'] }`        |
-| `maxSize`          | `number`                                     | Bytes                                                            |
-| `minSize`          | `number`                                     | Bytes                                                            |
-| `maxFiles`         | `number`                                     |                                                                  |
-| `multiple`         | `boolean`                                    | Default `true`                                                   |
-| `directory`        | `boolean`                                    | Folder upload (recursive)                                        |
-| `clipboard`        | `boolean`                                    | Paste from clipboard. Default `true`                             |
-| `rejectDuplicates` | `boolean`                                    | Default `false`                                                  |
-| `disabled`         | `boolean`                                    |                                                                  |
-| `mode`             | `'manual' \| 'instant' \| 'auto' \| 'queue'` | Default `'manual'`                                               |
-| `strategy`         | `'parallel' \| 'sequential'`                 | Default `'parallel'`                                             |
-| `concurrency`      | `number`                                     | Default `3`                                                      |
-| `retries`          | `number`                                     | Default `2`                                                      |
-| `chunkSize`        | `number`                                     | Bytes. Unset = single-shot upload                                |
-| `label`            | `ReactNode`                                  | Replaces the default heading                                     |
-| `hint`             | `ReactNode`                                  | Small descriptive line under the label                           |
-| `previewable`      | `boolean`                                    | Eye icon → fullscreen preview                                    |
-| `editable`         | `boolean`                                    | Pencil icon → rename + tag + describe                            |
-| `scrollAfter`      | `number`                                     | List becomes scrollable above this count                         |
-| `maxHeight`        | `string`                                     | CSS height of the scrollable region                              |
-| `width` / `height` | `string`                                     | Outer container CSS sizing                                       |
-| `accent`           | `string`                                     | Hex / RGB triplet / CSS color. Scoped to this instance.          |
-| `accentFg`         | `string`                                     | Foreground on accent surfaces. Auto-derived from `accent`.       |
-| `onDrop`           | `(accepted, rejected) => void`               |                                                                  |
-| `onDropRejected`   | `(errors) => void`                           |                                                                  |
-| `onUploadStart`    | `(file) => void`                             |                                                                  |
-| `onUploadProgress` | `(file, progress) => void`                   |                                                                  |
-| `onUploadSuccess`  | `(file) => void`                             |                                                                  |
-| `onUploadError`    | `(file, error) => void`                      |                                                                  |
+| Prop               | Type                                         | Notes                                                              |
+| ------------------ | -------------------------------------------- | ------------------------------------------------------------------ |
+| `endpoint`         | `string`                                     | URL for the multipart `POST`. Use `cloud:` for direct-to-S3 etc.   |
+| `cloud`            | `CloudAdapter`                               | Direct cloud upload or a custom upload function                    |
+| `accept`           | `string` &#x7C; `Accept`                     | `"image/*"`, `".pdf,.docx"`, or `{ 'image/*': ['.png'] }`          |
+| `maxSize`          | `number`                                     | Bytes                                                              |
+| `minSize`          | `number`                                     | Bytes                                                              |
+| `maxFiles`         | `number`                                     |                                                                    |
+| `multiple`         | `boolean`                                    | Default `true`                                                     |
+| `directory`        | `boolean`                                    | Folder upload (recursive)                                          |
+| `clipboard`        | `boolean`                                    | Paste from clipboard. Default `true`                               |
+| `rejectDuplicates` | `boolean`                                    | Default `false`                                                    |
+| `compressImages`   | `boolean` &#x7C; `ImageCompressionOptions`   | Resize JPEG / PNG / WebP before upload. See [Image compression](#image-compression) |
+| `disabled`         | `boolean`                                    |                                                                    |
+| `mode`             | `'manual' \| 'instant' \| 'auto' \| 'queue'` | Default `'manual'`                                                 |
+| `strategy`         | `'parallel' \| 'sequential'`                 | Default `'parallel'`                                               |
+| `concurrency`      | `number`                                     | Default `3`                                                        |
+| `retries`          | `number`                                     | Default `2`                                                        |
+| `chunkSize`        | `number`                                     | Bytes. Unset = single-shot upload                                  |
+| `label`            | `ReactNode`                                  | Main line of text in the drop area                                 |
+| `hint`             | `ReactNode`                                  | Small descriptive line under the label                             |
+| `hideActions`      | `boolean`                                    | Hide the Upload / Remove all buttons shown in `manual` mode        |
+| `hideGallery`      | `boolean`                                    | Hide the built-in file list                                        |
+| `galleryLayout`    | `'list' \| 'grid' \| 'table' \| 'compact'`   | Default `'list'`                                                   |
+| `previewable`      | `boolean`                                    | Eye icon → fullscreen preview                                      |
+| `editable`         | `boolean`                                    | Pencil icon → rename + tag + describe                              |
+| `scrollAfter`      | `number`                                     | List becomes scrollable above this count                           |
+| `maxHeight`        | `string`                                     | CSS height of the scrollable region                                |
+| `width` / `height` | `string`                                     | Outer container CSS sizing                                         |
+| `accent`           | `string`                                     | Hex / RGB triplet / CSS color. Scoped to this instance.            |
+| `accentFg`         | `string`                                     | Foreground on accent surfaces. Auto-derived from `accent`.         |
+| `onDrop`           | `(accepted, rejected) => void`               |                                                                    |
+| `onDropRejected`   | `(errors) => void`                           |                                                                    |
+| `onUploadStart`    | `(file) => void`                             |                                                                    |
+| `onUploadProgress` | `(file) => void`                             | `file.progress` is 0..1; also `file.speed`, `file.eta`             |
+| `onUploadSuccess`  | `(file) => void`                             | `file.url` and `file.response` are set                             |
+| `onUploadError`    | `(file, error) => void`                      |                                                                    |
+| `onAllComplete`    | `(files) => void`                            | Every file finished (success, error, or cancelled)                 |
 
 ### Full API surface
 
-- **Components** — `Dropzone`, `UploadArea`, `UploadButton`, `UploadProgress`, `UploadPreview`, `UploadGallery`, `UploadModal`, `FilePreviewModal`, `FileEditModal`, `ValidationErrorsModal`
+- **Components** — `Dropzone`, `UploadArea`, `UploadActions`, `UploadButton`, `UploadProgress`, `UploadPreview`, `UploadGallery`, `UploadModal`, `FilePreviewModal`, `FileEditModal`, `ValidationErrorsModal`
 - **Hooks** — `useDropzone`, `useUploader`, `useUploadQueue`, `useUploadProgress`, `useFilePreview`
 - **Providers** — `ThemeProvider`, `I18nProvider`
 - **Core** — `UploadQueue`, `validateFile`, `validateBatch`, `matchesAccept`
-- **Cloud (subpath)** — `createS3Adapter`, `createCloudinaryAdapter`, `createFirebaseStorageAdapter`, `createSupabaseAdapter`, `createDigitalOceanAdapter`, `createAzureBlobAdapter`, `createGcsAdapter`
+- **Cloud (subpath)** — `createS3Adapter`, `createCloudinaryAdapter`, `createFirebaseStorageAdapter`, `createSupabaseAdapter`, `createDigitalOceanAdapter`, `createAzureBlobAdapter`, `createGcsAdapter`, `createMockAdapter`
 - **Variants (subpath)** — 21 named exports (see [Pre-built variants](#pre-built-variants))
-- **Utilities** — `formatBytes`, `formatSpeed`, `formatEta`, `formatPercent`, `getFileCategory`, `detectSignature`, `wrapFile`, `generatePreview`, `revokePreview`, `cn`
+- **Utilities** — `compressImage`, `formatBytes`, `formatSpeed`, `formatEta`, `formatPercent`, `getFileCategory`, `detectSignature`, `wrapFile`, `generatePreview`, `revokePreview`, `cn`
 - **i18n exports** — `translations`, `rtlLocales`, type `Locale`, type `Translations`
 
-See [`docs/API.md`](./docs/API.md) for the full reference (when published).
+See [`docs/API.md`](https://github.com/yogeshgabani/react-upload-pro/blob/main/docs/API.md) for the full reference.
 
 ---
 
@@ -860,6 +1044,7 @@ import type {
   UploadStatus,
   ValidationError,
   CloudAdapter,
+  ImageCompressionOptions,
   Locale,
   Theme,
 } from "react-upload-pro";
@@ -906,23 +1091,24 @@ npm test             # vitest unit + component
 npm run test:e2e     # playwright smoke
 npm run build        # tsup → dist/ (ESM + CJS + .d.ts)
 npm run typecheck    # tsc --noEmit
-npm run lint         # eslint
 ```
 
-The playground at `npm run dev` is the fastest way to explore the API — every prop is wired to a UI control and the generated code updates live as you tweak.
+The playground (`npm run dev`, or the hosted version at [react-upload-pro.netlify.app](https://react-upload-pro.netlify.app/)) is the fastest way to explore the API — every prop is wired to a UI control and the generated code updates live as you tweak.
 
 PRs welcome — please:
 
 1. Open an issue first for non-trivial changes
 2. Add a test for new behavior
-3. Run `npm run typecheck && npm run lint && npm test` before pushing
+3. Run `npm run typecheck && npm test` before pushing
+
+If this library saves you time, a ⭐ on [GitHub](https://github.com/yogeshgabani/react-upload-pro) helps other developers find it.
 
 ---
 
 ## Changelog
 
-Every release is documented in [`CHANGELOG.md`](./CHANGELOG.md) — features
-added, bugs fixed, breaking changes called out. The live playground also has
+Every release is documented in [`CHANGELOG.md`](https://github.com/yogeshgabani/react-upload-pro/blob/main/CHANGELOG.md) — features
+added, bugs fixed, breaking changes called out. The [live playground](https://react-upload-pro.netlify.app/) also has
 a "Version history" panel under the variant gallery so you can review the
 release timeline right from the demo.
 
@@ -930,7 +1116,4 @@ release timeline right from the demo.
 
 ## License
 
-[MIT](./LICENSE) © Yogesh Gabani
-MIT License - Copyright (c) 2026 **Yogesh Gabani**
-
-Built by **Yogesh Gabani**.
+[MIT](./LICENSE) © 2026 Yogesh Gabani

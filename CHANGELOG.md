@@ -8,6 +8,69 @@ under the "Version history" panel.
 
 ---
 
+## 0.2.0 — 2026-10-13
+
+### Added
+
+- **`compressImages` option** on `Dropzone`, `useDropzone`, and every
+  variant. Resizes and re-encodes JPEG / PNG / WebP in the browser before
+  validation and upload (defaults: longest side 1920px, quality 0.8, same
+  format). Pass an object to tune `maxWidth`, `maxHeight`, `quality`, and
+  `mimeType`. GIF, SVG, and other files pass through untouched, and an image
+  is never replaced by a bigger one. Also exported as `compressImage(file, options)`.
+- **`createMockAdapter()`** in `react-upload-pro/cloud` — fake uploads with
+  real progress, cancel, and retry, so you can try the UI with no backend and
+  use it in Storybook or tests.
+- **Upload / Remove all buttons in `manual` mode.** `Dropzone` and every
+  variant with a file list now show them under the list (`BusinessCRM` keeps
+  its own Start button). Hide them with `hideActions`. Also exported as the
+  standalone `<UploadActions>` component for hook users.
+- **`file.url`** on every successful upload — taken from the cloud adapter
+  result, from `url` / `secure_url` / `location` / `fileUrl` / `file_url`
+  in a JSON response (also nested under `data`), or a plain-text URL body.
+- **`label` prop** on `Dropzone` and `UploadArea`.
+- **`isUploading`** and **`isDragActive`** (react-dropzone-style alias of
+  `isDragging`) on `useDropzone`.
+- New `upload` translation key in all 23 locales.
+
+### Changed
+
+- `CreativeAvatar` defaults to `mode: 'instant'`, since it has no file list
+  to put an Upload button in. Pass `mode` to override.
+
+### Fixed
+
+- `concurrency` is now respected when files are added while an upload is
+  already running (e.g. several drops in `instant` mode used to start
+  `concurrency` extra uploads each time).
+- `mode: 'queue'` now starts automatically and uploads one file at a time,
+  as documented. It previously behaved like `manual`.
+- `mode: 'auto'` now waits 100 ms so quick successive drops start as one
+  batch, as documented. It previously behaved exactly like `instant`.
+- Removing a file while it was uploading could stop the rest of the queue
+  from uploading when an `onUploadSuccess` / `onUploadError` callback was set.
+- Object-form `accept` (`{ 'image/*': ['.png'] }`) now also filters the
+  native file picker; previously only validation used it.
+- CommonJS consumers now get the `.d.cts` type declarations through
+  `exports`, and `react-upload-pro/package.json` is exported.
+- `.rup-scrollbar` looked different per browser: Chromium 121+ ignored the
+  custom `::-webkit-scrollbar` styling and drew its own scrollbar (with
+  arrow buttons on Windows). Chromium and Safari now get the rounded 8px
+  accent thumb, and Firefox gets the matching `scrollbar-color`.
+- npm `homepage`, `repository`, and `bugs` links pointed to a GitHub
+  organisation that doesn't exist. They now point to the live demo and
+  `github.com/yogeshgabani/react-upload-pro`.
+
+### Docs
+
+- README: live demo link and screenshot, a no-backend quick start, an
+  Express server example, a "Migrating from react-dropzone" section, and
+  sections for image compression and custom upload functions. Examples that
+  used non-existent APIs (`isUploading`, `isDragActive`, `clear`,
+  `pause()` without an id, `onUploadProgress(file, progress)`) are fixed.
+
+---
+
 ## 0.1.2 — 2026-06-05
 
 ### Added
@@ -162,7 +225,7 @@ Five categories, each option works on every variant:
 These items are tracked for future releases — feedback and PRs welcome:
 
 - [ ] Resumable uploads via tus protocol
-- [ ] Built-in image cropping / rotation
+- [ ] Built-in image cropping / rotation (resizing shipped in 0.2.0 as `compressImages`)
 - [ ] React 19 `useActionState` integration
 - [ ] Edge runtime cloud adapters (Cloudflare R2, Vercel Blob)
 - [ ] Headless `<Dropzone.Root>` / `<Dropzone.Item>` composition API
@@ -170,7 +233,8 @@ These items are tracked for future releases — feedback and PRs welcome:
 
 ---
 
-[unreleased]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.2...HEAD
-[0.1.2]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/react-upload-pro/react-upload-pro/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/react-upload-pro/react-upload-pro/releases/tag/v0.1.0
+[unreleased]: https://github.com/yogeshgabani/react-upload-pro/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/yogeshgabani/react-upload-pro/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/yogeshgabani/react-upload-pro/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/yogeshgabani/react-upload-pro/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/yogeshgabani/react-upload-pro/releases/tag/v0.1.0

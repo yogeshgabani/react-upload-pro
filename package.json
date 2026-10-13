@@ -1,28 +1,49 @@
 {
   "name": "react-upload-pro",
-  "version": "0.1.2",
-  "description": "The most feature-rich React file upload & dropzone library. Drag & drop, chunk uploads, cloud adapters, 20+ UI variants, i18n, a11y, SSR-safe.",
+  "version": "0.2.0",
+  "description": "Drop-in React file upload & dropzone component — drag & drop, progress, previews, chunked uploads, image compression, S3 / Cloudinary / Firebase / Supabase adapters, 21+ UI variants, i18n, TypeScript. A batteries-included react-dropzone alternative.",
   "keywords": [
     "react",
+    "react-component",
+    "react-hooks",
     "dropzone",
+    "react-dropzone",
+    "react-dropzone-alternative",
     "upload",
     "file-upload",
+    "react-file-upload",
+    "file-uploader",
+    "uploader",
+    "image-upload",
+    "image-uploader",
+    "image-compression",
     "drag-and-drop",
+    "drag-drop",
+    "upload-progress",
+    "chunked-upload",
+    "multipart",
+    "presigned-url",
     "tailwind",
     "nextjs",
     "vite",
     "typescript",
     "s3",
+    "aws-s3",
     "cloudinary",
     "firebase",
-    "supabase"
+    "supabase",
+    "azure-blob",
+    "google-cloud-storage"
   ],
   "license": "MIT",
   "author": "Yogesh Gabani",
-  "homepage": "https://github.com/react-upload-pro/react-upload-pro",
+  "homepage": "https://react-upload-pro.netlify.app/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/react-upload-pro/react-upload-pro.git"
+    "url": "git+https://github.com/yogeshgabani/react-upload-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yogeshgabani/react-upload-pro/issues"
   },
   "type": "module",
   "sideEffects": [
@@ -33,22 +54,38 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./variants": {
-      "types": "./dist/variants/index.d.ts",
-      "import": "./dist/variants/index.js",
-      "require": "./dist/variants/index.cjs"
+      "import": {
+        "types": "./dist/variants/index.d.ts",
+        "default": "./dist/variants/index.js"
+      },
+      "require": {
+        "types": "./dist/variants/index.d.cts",
+        "default": "./dist/variants/index.cjs"
+      }
     },
     "./cloud": {
-      "types": "./dist/cloud/index.d.ts",
-      "import": "./dist/cloud/index.js",
-      "require": "./dist/cloud/index.cjs"
+      "import": {
+        "types": "./dist/cloud/index.d.ts",
+        "default": "./dist/cloud/index.js"
+      },
+      "require": {
+        "types": "./dist/cloud/index.d.cts",
+        "default": "./dist/cloud/index.cjs"
+      }
     },
     "./styles.css": "./dist/styles.css",
-    "./tailwind": "./tailwind.preset.cjs"
+    "./tailwind": "./tailwind.preset.cjs",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",

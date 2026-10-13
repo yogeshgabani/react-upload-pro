@@ -4,6 +4,7 @@ import type { FileMetadata, UploadFile } from '../types';
 import { cn } from '../utils/cn';
 import { FileEditModal } from './FileEditModal';
 import { FilePreviewModal } from './FilePreviewModal';
+import { UploadActions } from './UploadActions';
 import { UploadPreview, type UploadPreviewProps } from './UploadPreview';
 
 export type GalleryLayout = 'list' | 'grid' | 'table' | 'compact';
@@ -50,6 +51,10 @@ export interface UploadGalleryProps extends DivAttrs, Omit<UploadPreviewProps, '
    */
   maxHeight?: string;
   emptyState?: React.ReactNode;
+  /** When set, renders "Remove all" / "Upload (n)" buttons under the list. */
+  onUploadAll?: () => void;
+  /** Used by the "Remove all" button when `onUploadAll` is set. */
+  onRemoveAll?: () => void;
 }
 
 /**
@@ -72,6 +77,8 @@ export function UploadGallery({
   scrollAfter,
   maxHeight = '280px',
   emptyState,
+  onUploadAll,
+  onRemoveAll,
   className,
   density,
   showStats,
@@ -216,6 +223,9 @@ export function UploadGallery({
         ))}
       </div>
       </ScrollWrapper>
+      {onUploadAll && (
+        <UploadActions files={files} onUpload={onUploadAll} onRemoveAll={onRemoveAll} />
+      )}
 
       {/* Built-in modals — only mount when actually opened, and only if the
           caller didn't pass a custom handler (which would suppress the

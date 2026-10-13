@@ -145,7 +145,8 @@ export function CreativePremium({ className, label, hint, ...opts }: VariantProp
 /** Avatar/profile picker — a compact circular drop target. */
 export function CreativeAvatar({ className, label, ...opts }: VariantProps) {
   const { t } = useI18n();
-  const api = useDropzone({ multiple: false, accept: 'image/*', ...opts });
+  // No file list to put an Upload button in, so upload as soon as a picture is picked.
+  const api = useDropzone({ multiple: false, accept: 'image/*', mode: 'instant', ...opts });
   const preview = api.files[0]?.previewUrl;
   return (
     <div className={cn('flex flex-col items-center gap-2', className)} style={containerStyleFromProps(opts)}>

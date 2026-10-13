@@ -13,14 +13,14 @@ import {
   useRef,
   useState,
 } from 'react';
-import { validateBatch } from '../core/validation';
+import { normalizeAccept, validateBatch } from '../core/validation';
 import type {
   DropzoneOptions,
   DropzoneState,
   UploadFile,
   ValidationError,
 } from '../types';
-import { collectFiles, fileKey, generatePreview, wrapFile } from '../utils';
+import { collectFiles, compressImage, fileKey, generatePreview, wrapFile } from '../utils';
 import { useUploadQueue } from './useUploadQueue';
 
 /** The bag of props returned by getRootProps. Tagged with data-* attributes for styling. */
@@ -49,6 +49,10 @@ export interface UseDropzoneReturn {
   rejected: ValidationError[];
   /** Whether anything is being dragged over the dropzone. */
   isDragging: boolean;
+  /** Alias of `isDragging`, named like react-dropzone's for easy migration. */
+  isDragActive: boolean;
+  /** Whether at least one file is uploading right now. */
+  isUploading: boolean;
   /** Whether the current drag would be accepted. */
   isDragAccept: boolean;
   isDragReject: boolean;
@@ -85,6 +89,7 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
     clipboard = true,
     noBubble: _noBubble = true,
     autoRevoke = true,
+    compressImages,
     accept,
     minSize,
     maxSize,
@@ -115,6 +120,12 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
       let pool = rawFiles;
       if (!multiple && pool.length > 1) pool = pool.slice(0, 1);
 
+      // Compress before validating so a large photo can still fit `maxSize`.
+      if (compressImages) {
+        const imageOptions = compressImages === true ? {} : compressImages;
+        pool = await Promise.all(pool.map((f) => compressImage(f, imageOptions)));
+      }
+
       // Single-file mode: dropping a new file replaces the existing one
       // (matches native <input type="file"> semantics). Without this, repeated
       // drops accumulate even when `multiple={false}`.
@@ -144,6 +155,7 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
     },
     [
       multiple,
+      compressImages,
       accept,
       minSize,
       maxSize,
@@ -341,7 +353,7 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
         type: 'file',
         multiple,
         disabled,
-        accept: typeof accept === 'string' ? accept : Array.isArray(accept) ? accept.join(',') : undefined,
+        accept: accept ? normalizeAccept(accept).join(',') : undefined,
         style: { display: 'none', ...props.style },
         onChange: (e) => {
           props.onChange?.(e);
@@ -361,6 +373,8 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
     files: queueApi.files,
     rejected,
     isDragging,
+    isDragActive: isDragging,
+    isUploading: queueApi.files.some((f) => f.status === 'uploading'),
     isDragAccept: state === 'drag-accept',
     isDragReject: state === 'drag-reject',
     state,

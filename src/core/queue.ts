@@ -11,6 +11,9 @@ import { xhrUpload } from './xhrUpload';
 
 type Listener = (files: UploadFile[]) => void;
 
+/** How long `mode: 'auto'` waits for more files before starting. */
+const AUTO_START_DELAY_MS = 100;
+
 /**
  * Central upload coordinator. Owns the list of files, drives the upload
  * lifecycle (start/pause/resume/retry/cancel/remove), and emits updates
@@ -25,6 +28,9 @@ export class UploadQueue {
   private callbacks: DropzoneCallbacks;
   private config: UploaderConfig;
   private completionFired = false;
+  /** Workers currently draining the queue, shared across start() calls. */
+  private runners = new Set<Promise<void>>();
+  private autoStartTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(config: UploaderConfig = {}, callbacks: DropzoneCallbacks = {}) {
     this.config = { concurrency: 3, retries: 2, retryBackoffMs: 500, ...config };
@@ -61,8 +67,12 @@ export class UploadQueue {
     this.completionFired = false;
     this.emit();
     const mode = this.config.mode ?? 'manual';
-    if (mode === 'instant' || mode === 'auto') {
+    if (mode === 'instant' || mode === 'queue') {
       void this.start();
+    } else if (mode === 'auto') {
+      // Debounce so several drops / pastes in quick succession start as one batch.
+      clearTimeout(this.autoStartTimer);
+      this.autoStartTimer = setTimeout(() => void this.start(), AUTO_START_DELAY_MS);
     }
   }
 
@@ -122,8 +132,8 @@ export class UploadQueue {
 
   async start(): Promise<void> {
     const strategy = this.config.strategy ?? 'parallel';
-    const concurrency =
-      strategy === 'sequential' ? 1 : Math.max(1, this.config.concurrency ?? 3);
+    const oneAtATime = strategy === 'sequential' || this.config.mode === 'queue';
+    const concurrency = oneAtATime ? 1 : Math.max(1, this.config.concurrency ?? 3);
 
     const pending = () =>
       this.files.filter((f) => f.status === 'idle' || f.status === 'queued' || f.status === 'paused');
@@ -135,16 +145,23 @@ export class UploadQueue {
 
     const next = () => pending().find((f) => f.status === 'queued');
 
-    const runners: Promise<void>[] = [];
     const launch = async () => {
       while (true) {
         const file = next();
         if (!file) return;
-        await this.runFile(file);
+        // runFile only throws when the file was removed mid-upload; keep
+        // draining the rest of the queue instead of killing this worker.
+        await this.runFile(file).catch(() => undefined);
       }
     };
-    for (let i = 0; i < concurrency; i++) runners.push(launch());
-    await Promise.all(runners);
+    // Workers from an earlier start() may still be running (e.g. a second
+    // drop in instant mode). Only top up to the limit so `concurrency` holds.
+    while (this.runners.size < concurrency) {
+      const runner: Promise<void> = launch().finally(() => this.runners.delete(runner));
+      this.runners.add(runner);
+    }
+    // Resolve once the queue is idle, including work picked up by later calls.
+    while (this.runners.size > 0) await Promise.all([...this.runners]);
     this.maybeFireCompletion();
   }
 
@@ -254,6 +271,7 @@ export class UploadQueue {
         bytesUploaded: file.size,
         finishedAt: Date.now(),
         response,
+        url: extractUrl(response),
         controller: undefined,
         eta: 0,
       });
@@ -320,6 +338,26 @@ export class UploadQueue {
       this.callbacks.onAllComplete?.(this.files);
     }
   }
+}
+
+/**
+ * Pull a public URL out of an upload response: a cloud adapter's `{ url }`,
+ * common JSON shapes (`url`, `secure_url`, `location`, `fileUrl`, nested
+ * under `data`), or a plain-text body that is itself a URL.
+ */
+export function extractUrl(response: unknown): string | undefined {
+  if (typeof response === 'string') {
+    const text = response.trim();
+    return /^(https?:\/\/|\/)\S+$/.test(text) ? text : undefined;
+  }
+  if (!response || typeof response !== 'object') return undefined;
+  const body = response as Record<string, unknown>;
+  for (const key of ['url', 'secure_url', 'location', 'fileUrl', 'file_url']) {
+    const value = body[key];
+    if (typeof value === 'string' && value) return value;
+  }
+  if (body.data && typeof body.data === 'object') return extractUrl(body.data);
+  return undefined;
 }
 
 function normalizeError(err: unknown): UploadError {

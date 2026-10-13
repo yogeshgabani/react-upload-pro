@@ -36,6 +36,11 @@ export interface VariantProps extends DropzoneOptions {
   /** Max CSS height for the scroll region. Default '280px'. */
   maxHeight?: string;
   /**
+   * Hide the "Upload" / "Remove all" buttons shown under the file list in
+   * `manual` mode. Use this when you trigger uploads some other way.
+   */
+  hideActions?: boolean;
+  /**
    * Override the accent color used by the variant — drives borders, focus
    * rings, progress fill, primary buttons, and hover states. Accepts:
    *   - a hex string: `'#10b981'` or `'#10B981'`
@@ -160,6 +165,8 @@ export function pickGalleryProps(props: VariantProps, api?: UseDropzoneReturn) {
   const onMetadataChange =
     props.onMetadataChange ??
     (api ? (f: UploadFile, m: FileMetadata) => api.setMetadata(f.id, m) : undefined);
+  // Manual mode never uploads on its own, so give it an Upload button.
+  const showActions = api && (props.mode ?? 'manual') === 'manual' && !props.hideActions;
   return {
     progressVariant: props.progressVariant,
     progressSize: props.progressSize,
@@ -169,5 +176,7 @@ export function pickGalleryProps(props: VariantProps, api?: UseDropzoneReturn) {
     maxHeight: props.maxHeight,
     onRename,
     onMetadataChange,
+    onUploadAll: showActions ? () => void api.start() : undefined,
+    onRemoveAll: showActions ? api.removeAll : undefined,
   };
 }

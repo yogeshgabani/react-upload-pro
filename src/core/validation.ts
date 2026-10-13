@@ -4,7 +4,7 @@ import { formatBytes, fileKey } from '../utils';
 /**
  * Normalize the `accept` config into a flat list of MIME/extension matchers.
  */
-function normalizeAccept(accept: Accept | undefined): string[] {
+export function normalizeAccept(accept: Accept | undefined): string[] {
   if (!accept) return [];
   if (typeof accept === 'string') {
     return accept.split(',').map((s) => s.trim()).filter(Boolean);

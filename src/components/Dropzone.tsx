@@ -3,6 +3,7 @@ import { useDropzone, type UseDropzoneReturn } from '../hooks/useDropzone';
 import type { DropzoneOptions, FileMetadata, UploadFile } from '../types';
 import { cn } from '../utils/cn';
 import { normalizeColorInput } from '../variants/types';
+import { UploadActions } from './UploadActions';
 import { UploadArea } from './UploadArea';
 import { UploadGallery, type GalleryLayout } from './UploadGallery';
 import type { ProgressVariant } from './UploadProgress';
@@ -12,6 +13,11 @@ export interface DropzoneProps extends DropzoneOptions {
   children?: (api: UseDropzoneReturn) => ReactNode;
   /** Hide the built-in file list. Default false. */
   hideGallery?: boolean;
+  /**
+   * Hide the "Upload" / "Remove all" buttons shown under the file list in
+   * `manual` mode. Use this when you call `start()` from your own UI.
+   */
+  hideActions?: boolean;
   /** Layout of the built-in gallery. Default 'list'. */
   galleryLayout?: GalleryLayout;
   /** Pick a progress visualization. */
@@ -37,6 +43,8 @@ export interface DropzoneProps extends DropzoneOptions {
   /** Extra inline style merged onto the outer container. */
   style?: React.CSSProperties;
   className?: string;
+  /** Main line of text in the drop area. */
+  label?: ReactNode;
   /** Hint text under the icon. */
   hint?: ReactNode;
   /**
@@ -64,6 +72,7 @@ export interface DropzoneProps extends DropzoneOptions {
 export function Dropzone({
   children,
   hideGallery,
+  hideActions,
   galleryLayout = 'list',
   progressVariant,
   progressSize,
@@ -77,6 +86,7 @@ export function Dropzone({
   height,
   style,
   className,
+  label,
   hint,
   accent,
   accentFg,
@@ -113,11 +123,16 @@ export function Dropzone({
   }
   const surfaceStyle = height !== undefined ? { height } : undefined;
 
+  // In manual mode nothing uploads until start() is called, so give users a
+  // button for it — otherwise the drop-in component is a dead end.
+  const isManual = (options.mode ?? 'manual') === 'manual';
+
   return (
     <div className={cn('flex flex-col gap-4', className)} style={containerStyle}>
       <UploadArea
         state={api.state}
         disabled={options.disabled}
+        label={label}
         description={hint}
         style={surfaceStyle}
         {...api.getRootProps()}
@@ -140,6 +155,14 @@ export function Dropzone({
           onPause={(f) => api.pause(f.id)}
           onResume={(f) => api.resume(f.id)}
           onCancel={(f) => api.cancel(f.id)}
+        />
+      )}
+      {isManual && !hideActions && (
+        <UploadActions
+          files={api.files}
+          onUpload={() => void api.start()}
+          onRemoveAll={api.removeAll}
+          disabled={options.disabled}
         />
       )}
     </div>

@@ -10,13 +10,26 @@ The flagship drop-in component. Accepts all `DropzoneOptions` plus:
 | --- | --- | --- |
 | `children` | `(api: UseDropzoneReturn) => ReactNode` | Render-prop override |
 | `hideGallery` | `boolean` | Hide the built-in file list (default false) |
+| `hideActions` | `boolean` | Hide the Upload / Remove all buttons shown in `manual` mode |
+| `label` | `ReactNode` | Main line of text in the drop area |
 | `galleryLayout` | `'list' \| 'grid' \| 'table' \| 'compact'` | Layout of the built-in gallery |
 | `hint` | `ReactNode` | Subtext under the icon |
 | `className` | `string` | Tailwind class additions |
 
 ### `<UploadArea />`
 
-The visual drop surface. Spread `getRootProps()` on it.
+The visual drop surface. Spread `getRootProps()` on it. Accepts `label`, `description`, and `icon`.
+
+### `<UploadActions />`
+
+"Remove all" + "Upload (n)" buttons for `manual` mode. Renders nothing for an empty list.
+
+| Prop | Type |
+| --- | --- |
+| `files` | `UploadFile[]` |
+| `onUpload` | `() => void` (usually `start`) |
+| `onRemoveAll` | `() => void` (button hidden when omitted) |
+| `disabled` | `boolean` |
 
 ### `<UploadButton />`
 
@@ -40,7 +53,7 @@ Single-file row/card. Accepts callbacks for retry / pause / resume / cancel / re
 
 ### `<UploadGallery />`
 
-Renders a list of `UploadFile[]` in `list / grid / table / compact` layout. Supports `searchable`, `filterable`, `reorderable`.
+Renders a list of `UploadFile[]` in `list / grid / table / compact` layout. Supports `searchable`, `filterable`, `reorderable`. Pass `onUploadAll` (and optionally `onRemoveAll`) to render `<UploadActions>` under the list.
 
 ### `<UploadModal />`, `<FilePreviewModal />`
 
@@ -62,6 +75,8 @@ Returns:
   files,                // UploadFile[]
   rejected,             // ValidationError[] from latest drop
   isDragging,
+  isDragActive,         // alias of isDragging (react-dropzone naming)
+  isUploading,          // at least one file is uploading
   isDragAccept,
   isDragReject,
   state,                // 'idle' | 'dragging' | 'drag-accept' | 'drag-reject'
@@ -69,11 +84,11 @@ Returns:
   remove,
   removeAll,
   reorder,              // (from, to)
-  start,                // begin uploading
-  pause,
-  resume,
-  retry,
-  cancel,
+  start,                // begin uploading; resolves when the queue is idle
+  pause,                // (id)
+  resume,               // (id)
+  retry,                // (id)
+  cancel,               // (id)
   rename,
   setMetadata,
   queue,                // direct UploadQueue handle
@@ -111,6 +126,7 @@ Returns `{ kind, url?, text?, loading, error? }`. Lazily reads up to 64KB for te
 | `maxFiles` | `number` | unset |
 | `rejectDuplicates` | `boolean` | false |
 | `validators` | `Array<(file: File) => ValidationError \| null \| Promise<...>>` | unset |
+| `compressImages` | `boolean \| { maxWidth?, maxHeight?, quality?, mimeType? }` | unset (runs before validation) |
 
 ### Upload
 
@@ -176,7 +192,9 @@ interface CloudAdapter {
 }
 ```
 
-Use `cloud: createS3Adapter({...})` instead of `endpoint`.
+Use `cloud: createS3Adapter({...})` instead of `endpoint`. Any object with this shape works, so a custom fetch / axios upload is just an inline adapter.
+
+`createMockAdapter({ durationMs?, failRate? })` fakes uploads with real progress, for demos, Storybook, and tests.
 
 See [`docs/cloud.md`](./cloud.md) for adapter-specific options.
 
@@ -199,6 +217,7 @@ interface UploadFile {
   eta: number;              // seconds
   error?: UploadError;
   response?: unknown;
+  url?: string;             // public URL from the adapter result or JSON response
   previewUrl?: string;
   addedAt: number;
   startedAt?: number;
@@ -209,3 +228,11 @@ interface UploadFile {
   chunks?: ChunkState[];
 }
 ```
+
+---
+
+## Utilities
+
+### `compressImage(file, options?)`
+
+Resizes and re-encodes a JPEG / PNG / WebP `File` in the browser and resolves with the new `File` — or the original when it isn't an image the browser can re-encode, or when the result wouldn't be smaller. Options: `maxWidth` (1920), `maxHeight` (1920), `quality` (0.8), `mimeType` (same as input).

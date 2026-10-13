@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Dropzone } from '../src/components/Dropzone';
+import type { CloudAdapter } from '../src/types';
 import { makeFile } from './helpers';
 
 describe('<Dropzone />', () => {
@@ -69,5 +70,56 @@ describe('<Dropzone />', () => {
     // gallery should show only one file total.
     expect(screen.queryByText('first.txt')).not.toBeInTheDocument();
     expect(screen.getByText('second.txt')).toBeInTheDocument();
+  });
+});
+
+describe('<Dropzone /> manual-mode actions', () => {
+  const instantAdapter: CloudAdapter = {
+    name: 'instant',
+    upload: async (file) => ({ url: `https://cdn.example.com/${file.name}` }),
+  };
+
+  async function selectFiles(container: HTMLElement, files: File[]) {
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: files, configurable: true });
+    await act(async () => {
+      fireEvent.change(input);
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
+
+  it('renders a custom label', () => {
+    render(<Dropzone label="Drop your resume here" />);
+    expect(screen.getByText('Drop your resume here')).toBeInTheDocument();
+  });
+
+  it('shows an Upload button that uploads the queued files', async () => {
+    const onUploadSuccess = vi.fn();
+    const { container } = render(
+      <Dropzone cloud={instantAdapter} onUploadSuccess={onUploadSuccess} />,
+    );
+    expect(screen.queryByRole('button', { name: /upload \(/i })).not.toBeInTheDocument();
+
+    await selectFiles(container, [makeFile('a.txt', 5, 'text/plain'), makeFile('b.txt', 5, 'text/plain')]);
+    const uploadButton = screen.getByRole('button', { name: 'Upload (2)' });
+
+    await act(async () => {
+      fireEvent.click(uploadButton);
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(onUploadSuccess).toHaveBeenCalledTimes(2);
+    expect(onUploadSuccess.mock.calls[0][0].url).toBe('https://cdn.example.com/a.txt');
+    expect(screen.getByRole('button', { name: 'Upload (0)' })).toBeDisabled();
+  });
+
+  it('hides the action bar with hideActions or a non-manual mode', async () => {
+    const { container, unmount } = render(<Dropzone hideActions />);
+    await selectFiles(container, [makeFile('a.txt', 5, 'text/plain')]);
+    expect(screen.queryByRole('button', { name: /upload \(/i })).not.toBeInTheDocument();
+    unmount();
+
+    const auto = render(<Dropzone mode="instant" cloud={instantAdapter} />);
+    await selectFiles(auto.container, [makeFile('a.txt', 5, 'text/plain')]);
+    expect(screen.queryByRole('button', { name: /upload \(/i })).not.toBeInTheDocument();
   });
 });

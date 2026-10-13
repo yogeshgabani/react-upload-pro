@@ -53,6 +53,13 @@ export interface UploadFile {
   error?: UploadError;
   /** Server response after success. */
   response?: unknown;
+  /**
+   * Public URL of the uploaded file, when one can be found. Taken from a
+   * cloud adapter's result, from `url` / `secure_url` / `location` /
+   * `fileUrl` / `file_url` in a JSON response (also nested under `data`),
+   * or from a plain-text response body that is itself a URL.
+   */
+  url?: string;
   /** Object URL for preview, if generated. */
   previewUrl?: string;
   /** Time the file was added (ms). */
@@ -201,7 +208,24 @@ export interface DropzoneCallbacks {
   onAllComplete?: (files: UploadFile[]) => void;
 }
 
+export interface ImageCompressionOptions {
+  /** Longest allowed width in px. Larger images are scaled down. Default 1920. */
+  maxWidth?: number;
+  /** Longest allowed height in px. Larger images are scaled down. Default 1920. */
+  maxHeight?: number;
+  /** Encoder quality for JPEG / WebP, 0..1. Default 0.8. */
+  quality?: number;
+  /** Convert to this format. Default: keep the original format. */
+  mimeType?: 'image/jpeg' | 'image/webp' | 'image/png';
+}
+
 export interface DropzoneOptions extends ValidationConfig, UploaderConfig, DropzoneCallbacks {
+  /**
+   * Resize + re-encode JPEG / PNG / WebP images in the browser before they
+   * are validated and uploaded. `true` uses the defaults (max 1920px, 0.8
+   * quality). GIF, SVG and other files pass through untouched.
+   */
+  compressImages?: boolean | ImageCompressionOptions;
   /** Allow multiple files. Default true. */
   multiple?: boolean;
   /** Allow directory upload via webkitdirectory. Default false. */
@@ -245,6 +269,7 @@ export interface Translations {
   dropHere: string;
   dragOrClick: string;
   browse: string;
+  upload: string;
   uploading: string;
   paused: string;
   success: string;
