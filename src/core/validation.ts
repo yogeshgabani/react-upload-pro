@@ -1,5 +1,5 @@
-import type { Accept, ValidationConfig, ValidationError } from '../types';
-import { formatBytes, fileKey } from '../utils';
+import type { Accept, ImageDimensionLimits, ValidationConfig, ValidationError } from '../types';
+import { formatBytes, fileKey, getImageSize } from '../utils';
 
 /**
  * Normalize the `accept` config into a flat list of MIME/extension matchers.
@@ -84,6 +84,10 @@ export async function validateFile(
 ): Promise<ValidationError | null> {
   const built = validateBuiltin(file, config);
   if (built) return built;
+  if (config.imageDimensions) {
+    const dimensionError = await validateImageDimensions(file, config.imageDimensions);
+    if (dimensionError) return dimensionError;
+  }
   if (config.validators?.length) {
     for (const validator of config.validators) {
       const result = await validator(file);
@@ -93,20 +97,56 @@ export async function validateFile(
   return null;
 }
 
+async function validateImageDimensions(
+  file: File,
+  limits: ImageDimensionLimits,
+): Promise<ValidationError | null> {
+  const size = await getImageSize(file);
+  if (!size) return null;
+  const { width, height } = size;
+  const { minWidth, minHeight, maxWidth, maxHeight } = limits;
+  if ((minWidth !== undefined && width < minWidth) || (minHeight !== undefined && height < minHeight)) {
+    return {
+      code: 'image-too-small',
+      message: `Image is ${width}×${height}px; it must be at least ${describeSize(minWidth, minHeight)}.`,
+      file,
+    };
+  }
+  if ((maxWidth !== undefined && width > maxWidth) || (maxHeight !== undefined && height > maxHeight)) {
+    return {
+      code: 'image-too-large',
+      message: `Image is ${width}×${height}px; it must be at most ${describeSize(maxWidth, maxHeight)}.`,
+      file,
+    };
+  }
+  return null;
+}
+
+/** "200×100px", "200px wide", or "100px tall" — whichever limits are set. */
+function describeSize(width: number | undefined, height: number | undefined): string {
+  if (width !== undefined && height !== undefined) return `${width}×${height}px`;
+  if (width !== undefined) return `${width}px wide`;
+  return `${height}px tall`;
+}
+
 /**
- * Validate a batch of files. Applies built-in rules first, then maxFiles,
- * then duplicate detection, then async validators. Returns accepted + rejected.
+ * Validate a batch of files. Applies maxFiles first, then duplicate
+ * detection, then per-file rules and async validators, then maxTotalSize.
+ * `existingCount` / `existingKeys` / `existingBytes` describe files already
+ * in the list. Returns accepted + rejected.
  */
 export async function validateBatch(
   files: File[],
   config: ValidationConfig,
   existingCount = 0,
   existingKeys: Set<string> = new Set(),
+  existingBytes = 0,
 ): Promise<{ accepted: File[]; rejected: ValidationError[] }> {
   const accepted: File[] = [];
   const rejected: ValidationError[] = [];
   const seenInBatch = new Set<string>();
   let count = existingCount;
+  let totalBytes = existingBytes;
 
   for (const file of files) {
     if (typeof config.maxFiles === 'number' && count >= config.maxFiles) {
@@ -134,10 +174,21 @@ export async function validateBatch(
     const error = await validateFile(file, config);
     if (error) {
       rejected.push(error);
-    } else {
-      accepted.push(file);
-      count += 1;
+      continue;
     }
+
+    if (typeof config.maxTotalSize === 'number' && totalBytes + file.size > config.maxTotalSize) {
+      rejected.push({
+        code: 'total-size-exceeded',
+        message: `Adding this file would exceed the ${formatBytes(config.maxTotalSize)} total limit.`,
+        file,
+      });
+      continue;
+    }
+
+    accepted.push(file);
+    count += 1;
+    totalBytes += file.size;
   }
 
   return { accepted, rejected };

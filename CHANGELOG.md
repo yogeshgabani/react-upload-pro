@@ -28,6 +28,21 @@ under the "Version history" panel.
 - **`file.url`** on every successful upload — taken from the cloud adapter
   result, from `url` / `secure_url` / `location` / `fileUrl` / `file_url`
   in a JSON response (also nested under `data`), or a plain-text URL body.
+- **`name` prop for forms** on `Dropzone` and every variant. Each
+  successful upload adds a hidden `<input name={name} value={file.url}>`, so
+  a plain form post, a Next.js Server Action, or a Remix action gets the
+  URLs via `formData.getAll(name)`. Change what's submitted with
+  `formValue`. Also exported as `<UploadFormValue>` for hook users.
+- **`maxTotalSize` option** — a limit on the combined size of every file in
+  the list, including ones added earlier. Files over it are rejected with
+  `total-size-exceeded`.
+- **`imageDimensions` option** — `minWidth`, `minHeight`, `maxWidth`,
+  `maxHeight` in pixels. Rejects with `image-too-small` / `image-too-large`
+  and a message like "Image is 120×90px; it must be at least 200×200px."
+  Checked after `compressImages`. Images the browser can't decode (SVG,
+  HEIC) and non-images are not checked. Also exported as `getImageSize(file)`.
+- **`capture` option** — open the phone camera instead of the file picker
+  (`'user'`, `'environment'`, or `true`). Ignored on desktop.
 - **`label` prop** on `Dropzone` and `UploadArea`.
 - **`isUploading`** and **`isDragActive`** (react-dropzone-style alias of
   `isDragging`) on `useDropzone`.
@@ -65,9 +80,12 @@ under the "Version history" panel.
 
 - README: live demo link and screenshot, a no-backend quick start, an
   Express server example, a "Migrating from react-dropzone" section, and
-  sections for image compression and custom upload functions. Examples that
-  used non-existent APIs (`isUploading`, `isDragActive`, `clear`,
-  `pause()` without an id, `onUploadProgress(file, progress)`) are fixed.
+  sections for image compression, form submission, the camera, validation
+  rules, and custom upload functions. Examples that used non-existent APIs
+  (`isUploading`, `isDragActive`, `clear`, `pause()` without an id,
+  `onUploadProgress(file, progress)`) are fixed.
+- Live playground: page description, favicon, and a social-preview image
+  for links shared on X, LinkedIn, Slack, WhatsApp, and so on.
 
 ---
 

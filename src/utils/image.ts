@@ -81,3 +81,31 @@ function replaceExtension(name: string, ext: string): string {
   const dot = name.lastIndexOf('.');
   return `${dot > 0 ? name.slice(0, dot) : name}.${ext}`;
 }
+
+/** Raster formats `createImageBitmap` decodes in current browsers. */
+const DECODABLE = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/avif',
+  'image/bmp',
+]);
+
+/**
+ * Read an image's size in pixels. Resolves to `null` for files that aren't
+ * decodable raster images (SVG, HEIC, PDFs, …), or when running on the server.
+ *
+ *   const size = await getImageSize(file); // → { width: 1920, height: 1080 }
+ */
+export async function getImageSize(file: File): Promise<{ width: number; height: number } | null> {
+  if (!DECODABLE.has(file.type) || typeof createImageBitmap !== 'function') return null;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size;
+  } catch {
+    return null;
+  }
+}

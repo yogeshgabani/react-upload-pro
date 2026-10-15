@@ -11,6 +11,8 @@ The flagship drop-in component. Accepts all `DropzoneOptions` plus:
 | `children` | `(api: UseDropzoneReturn) => ReactNode` | Render-prop override |
 | `hideGallery` | `boolean` | Hide the built-in file list (default false) |
 | `hideActions` | `boolean` | Hide the Upload / Remove all buttons shown in `manual` mode |
+| `name` | `string` | Submit uploaded files with the surrounding `<form>` as hidden inputs (also on every variant) |
+| `formValue` | `(file: UploadFile) => string \| undefined` | What to submit per uploaded file when `name` is set (default `file.url`) |
 | `label` | `ReactNode` | Main line of text in the drop area |
 | `galleryLayout` | `'list' \| 'grid' \| 'table' \| 'compact'` | Layout of the built-in gallery |
 | `hint` | `ReactNode` | Subtext under the icon |
@@ -30,6 +32,16 @@ The visual drop surface. Spread `getRootProps()` on it. Accepts `label`, `descri
 | `onUpload` | `() => void` (usually `start`) |
 | `onRemoveAll` | `() => void` (button hidden when omitted) |
 | `disabled` | `boolean` |
+
+### `<UploadFormValue />`
+
+Hidden `<input>`s that put successfully uploaded files into the surrounding `<form>` — one per file, all with the same `name`. `<Dropzone name>` and every variant render it for you; use it directly with `useDropzone`.
+
+| Prop | Type |
+| --- | --- |
+| `name` | `string` |
+| `files` | `UploadFile[]` |
+| `formValue` | `(file: UploadFile) => string \| undefined` (default `file.url`; return `undefined` to skip a file) |
 
 ### `<UploadButton />`
 
@@ -124,9 +136,13 @@ Returns `{ kind, url?, text?, loading, error? }`. Lazily reads up to 64KB for te
 | `minSize` | `number` (bytes) | unset |
 | `maxSize` | `number` (bytes) | unset |
 | `maxFiles` | `number` | unset |
+| `maxTotalSize` | `number` (bytes, all files combined) | unset |
+| `imageDimensions` | `{ minWidth?, minHeight?, maxWidth?, maxHeight? }` (pixels) | unset |
 | `rejectDuplicates` | `boolean` | false |
 | `validators` | `Array<(file: File) => ValidationError \| null \| Promise<...>>` | unset |
 | `compressImages` | `boolean \| { maxWidth?, maxHeight?, quality?, mimeType? }` | unset (runs before validation) |
+
+Rejection codes: `file-invalid-type`, `file-too-small`, `file-too-large`, `too-many-files`, `total-size-exceeded`, `image-too-small`, `image-too-large`, `duplicate-file`, `custom`. `imageDimensions` only checks JPEG / PNG / WebP / GIF / AVIF / BMP images the browser can decode.
 
 ### Upload
 
@@ -155,6 +171,7 @@ Returns `{ kind, url?, text?, loading, error? }`. Lazily reads up to 64KB for te
 | `multiple` | `boolean` | `true` |
 | `directory` | `boolean` | `false` |
 | `clipboard` | `boolean` | `true` |
+| `capture` | `boolean \| 'user' \| 'environment'` | unset (phones open the camera; ignored on desktop) |
 | `disabled` | `boolean` | `false` |
 | `noBubble` | `boolean` | `true` |
 | `autoRevoke` | `boolean` | `true` |
@@ -236,3 +253,7 @@ interface UploadFile {
 ### `compressImage(file, options?)`
 
 Resizes and re-encodes a JPEG / PNG / WebP `File` in the browser and resolves with the new `File` — or the original when it isn't an image the browser can re-encode, or when the result wouldn't be smaller. Options: `maxWidth` (1920), `maxHeight` (1920), `quality` (0.8), `mimeType` (same as input).
+
+### `getImageSize(file)`
+
+Resolves to `{ width, height }` in pixels, or `null` for files that aren't decodable raster images (SVG, HEIC, PDFs, …) and on the server.

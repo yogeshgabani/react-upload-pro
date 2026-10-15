@@ -98,5 +98,8 @@ const badgeClassesByCode: Partial<Record<ValidationErrorCode, string>> = {
   'file-too-small': 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
   'file-invalid-type': 'bg-rup-error/15 text-rup-error',
   'too-many-files': 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+  'total-size-exceeded': 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
   'duplicate-file': 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  'image-too-small': 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  'image-too-large': 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
 };
