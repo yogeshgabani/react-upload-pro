@@ -5,6 +5,7 @@ import { cn } from '../utils/cn';
 import { formatBytes, formatEta } from '../utils/format';
 import { FolderIcon, UploadIcon } from '../components/icons';
 import { UploadProgress } from '../components/UploadProgress';
+import { UploadFormValue } from '../components/UploadFormValue';
 import { UploadGallery } from '../components/UploadGallery';
 import { containerStyleFromProps, pickGalleryProps, surfaceStyleFromProps, type VariantProps } from "./types";
 
@@ -33,6 +34,7 @@ export function EnterpriseDocs({ className, label, hint, ...opts }: VariantProps
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <UploadIcon width={18} height={18} className="text-rup-accent" />
         <span className="flex-1 text-rup-fg">{t.dragOrClick}</span>
         <button
@@ -94,6 +96,7 @@ export function EnterpriseTeam({ className, label, hint, ...opts }: VariantProps
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="flex items-center gap-3 text-sm text-rup-muted">
           <FolderIcon width={20} height={20} />
           <span>{t.dragOrClick}</span>
@@ -137,6 +140,7 @@ export function EnterpriseMediaLibrary({ className, label, hint, ...opts }: Vari
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <UploadIcon width={22} height={22} className="text-rup-accent" />
         <p className="font-medium text-rup-fg">{label ?? 'Add media'}</p>
         {hint && <p className="text-xs text-rup-muted">{hint}</p>}
@@ -177,6 +181,7 @@ export function EnterpriseFullscreen({
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-rup-accent/15 text-rup-accent">
           <UploadIcon width={36} height={36} />
         </div>

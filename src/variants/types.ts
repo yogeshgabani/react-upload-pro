@@ -36,6 +36,13 @@ export interface VariantProps extends DropzoneOptions {
   /** Max CSS height for the scroll region. Default '280px'. */
   maxHeight?: string;
   /**
+   * Submit uploaded files with the surrounding `<form>`: each successful
+   * upload adds a hidden `<input name={name} value={file.url}>`.
+   */
+  name?: string;
+  /** What to submit per uploaded file when `name` is set. Default: `file.url`. */
+  formValue?: (file: UploadFile) => string | undefined;
+  /**
    * Hide the "Upload" / "Remove all" buttons shown under the file list in
    * `manual` mode. Use this when you trigger uploads some other way.
    */

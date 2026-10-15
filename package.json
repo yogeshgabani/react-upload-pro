@@ -1,7 +1,7 @@
 {
   "name": "react-upload-pro",
   "version": "0.2.0",
-  "description": "Drop-in React file upload & dropzone component — drag & drop, progress, previews, chunked uploads, image compression, S3 / Cloudinary / Firebase / Supabase adapters, 21+ UI variants, i18n, TypeScript. A batteries-included react-dropzone alternative.",
+  "description": "Drop-in React file upload & dropzone component \u2014 drag & drop, progress, previews, chunked uploads, image compression, S3 / Cloudinary / Firebase / Supabase adapters, 21+ UI variants, i18n, TypeScript. A batteries-included react-dropzone alternative.",
   "keywords": [
     "react",
     "react-component",
@@ -94,9 +94,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "vite --config demo/vite.config.ts",
-    "dev:lib": "tsup --watch",
+    "build": "node init && tsup",
+    "dev": "node init && vite --config demo/vite.config.ts",
+    "dev:lib": "node init && tsup --watch",
     "demo": "vite --config demo/vite.config.ts",
     "demo:build": "vite build --config demo/vite.config.ts",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
@@ -106,7 +106,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
+    "build-storybook": "node init && storybook build",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {

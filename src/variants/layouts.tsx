@@ -2,6 +2,7 @@ import { useDropzone } from '../hooks/useDropzone';
 import { useI18n } from '../i18n/I18nProvider';
 import { cn } from '../utils/cn';
 import { UploadIcon } from '../components/icons';
+import { UploadFormValue } from '../components/UploadFormValue';
 import { UploadGallery } from '../components/UploadGallery';
 import { UploadModal } from '../components/UploadModal';
 import { containerStyleFromProps, pickGalleryProps, surfaceStyleFromProps, type VariantProps } from "./types";
@@ -22,6 +23,7 @@ export function LayoutBox({ className, label, hint, ...opts }: VariantProps) {
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <UploadIcon width={28} height={28} className="text-rup-accent" />
         <p className="text-sm font-medium text-rup-fg">{label ?? t.dragOrClick}</p>
         {hint && <p className="text-xs text-rup-muted">{hint}</p>}
@@ -58,6 +60,7 @@ export function LayoutCard({ className, label, hint, ...opts }: VariantProps) {
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <UploadIcon width={28} height={28} className="text-rup-accent" />
         <p className="text-base font-semibold text-rup-fg">{label ?? t.dragOrClick}</p>
         {hint && <p className="text-xs text-rup-muted">{hint}</p>}
@@ -89,6 +92,7 @@ export function LayoutSidebar({ className, label, hint, ...opts }: VariantProps)
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <UploadIcon width={22} height={22} className="text-rup-accent" />
         <p className="text-sm font-medium text-rup-fg">{label ?? t.dragOrClick}</p>
         {hint && <p className="text-xs text-rup-muted">{hint}</p>}
@@ -129,6 +133,7 @@ export function LayoutModal({ className, label, hint, ...opts }: VariantProps) {
           )}
         >
           <input {...api.getInputProps()} />
+          {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
           <UploadIcon width={24} height={24} className="text-rup-accent" />
           <p className="text-sm font-medium text-rup-fg">{t.dragOrClick}</p>
           {hint && <p className="text-xs text-rup-muted">{hint}</p>}
@@ -182,6 +187,7 @@ export function LayoutFloating({ className, label, hint, ...opts }: VariantProps
             )}
           >
             <input {...api.getInputProps()} />
+            {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
             <UploadIcon width={16} height={16} />
             <span>{hint ?? t.dragOrClick}</span>
           </div>

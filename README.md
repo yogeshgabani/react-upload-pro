@@ -547,6 +547,15 @@ export function ProfilePictureUploader() {
 />
 ```
 
+### Take a photo on mobile
+
+```tsx
+// Opens the back camera on phones; desktop browsers show the normal file picker.
+<Dropzone endpoint="/api/upload" accept="image/*" capture="environment" />
+```
+
+Use `capture="user"` for the front camera (selfies, avatars).
+
 ### Manual control with the render prop
 
 ```tsx
@@ -689,6 +698,46 @@ const smaller = await compressImage(file, { maxWidth: 800 });
 
 ---
 
+## Use inside a form
+
+Give the dropzone a `name` and every uploaded file is submitted with the surrounding `<form>` as a hidden field holding its URL — no `useState`, no `onChange` wiring. It works with plain HTML forms, Next.js Server Actions, and Remix actions.
+
+```ts
+// app/profile/actions.ts
+"use server";
+
+export async function saveProfile(formData: FormData) {
+  const name = formData.get("displayName");
+  const photos = formData.getAll("photos"); // → ['https://…/a.jpg', 'https://…/b.jpg']
+  // …save to your database
+}
+```
+
+```tsx
+// app/profile/page.tsx
+"use client";
+
+import { Dropzone } from "react-upload-pro";
+import "react-upload-pro/styles.css";
+import { saveProfile } from "./actions";
+
+export default function ProfilePage() {
+  return (
+    <form action={saveProfile}>
+      <input name="displayName" />
+      <Dropzone name="photos" endpoint="/api/upload" mode="auto" accept="image/*" />
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+```
+
+- Only finished uploads are submitted. Use `mode="auto"` so files upload as soon as they're added.
+- Submit something other than the URL with `formValue`, e.g. `formValue={(file) => (file.response as { id: string }).id}`.
+- Every variant accepts `name` too. With `useDropzone`, render `<UploadFormValue name="photos" files={files} />` inside your form.
+
+---
+
 ## Custom upload function (fetch / axios)
 
 Need your own request logic — axios interceptors, GraphQL, a signed URL from your API? Pass any object with an `upload` function as `cloud`. Report progress with `onProgress` and honour `signal` so cancel / pause work:
@@ -788,6 +837,8 @@ useDropzone({
   minSize: 1024, // 1 KB
   maxSize: 5 * 1024 * 1024, // 5 MB
   maxFiles: 10,
+  maxTotalSize: 50 * 1024 * 1024, // 50 MB across all files
+  imageDimensions: { minWidth: 400, minHeight: 400 }, // pixels
   rejectDuplicates: true, // same name + size + lastModified
   validators: [
     async (file) =>
@@ -797,6 +848,18 @@ useDropzone({
   ],
 });
 ```
+
+| Rule              | Rejection `code`                       | Notes                                                                 |
+| ----------------- | -------------------------------------- | --------------------------------------------------------------------- |
+| `accept`          | `file-invalid-type`                    | MIME globs, extensions, or `{ "image/*": [".png"] }`                  |
+| `minSize` / `maxSize` | `file-too-small` / `file-too-large` | Bytes, per file                                                       |
+| `maxFiles`        | `too-many-files`                       | Counts files already in the list                                      |
+| `maxTotalSize`    | `total-size-exceeded`                  | Bytes, all files combined — including ones added earlier              |
+| `imageDimensions` | `image-too-small` / `image-too-large`  | `minWidth`, `minHeight`, `maxWidth`, `maxHeight` in pixels. Checked after `compressImages`; SVG and non-images are skipped |
+| `rejectDuplicates`| `duplicate-file`                       |                                                                       |
+| `validators`      | whatever you return                    | Sync or async; run after the built-in rules                           |
+
+Every rejection comes with a readable `message`, e.g. *"Image is 200×150px; it must be at least 400×400px."* `getImageSize(file)` is exported too if you need the pixel size yourself.
 
 For security-sensitive flows, validate the real magic number instead of trusting the MIME the browser reports:
 
@@ -986,9 +1049,12 @@ states, and scrollbars.
 | `maxSize`          | `number`                                     | Bytes                                                              |
 | `minSize`          | `number`                                     | Bytes                                                              |
 | `maxFiles`         | `number`                                     |                                                                    |
+| `maxTotalSize`     | `number`                                     | Bytes, all files combined. See [Validation](#validation)           |
+| `imageDimensions`  | `{ minWidth?, minHeight?, maxWidth?, maxHeight? }` | Pixels. See [Validation](#validation)                        |
 | `multiple`         | `boolean`                                    | Default `true`                                                     |
 | `directory`        | `boolean`                                    | Folder upload (recursive)                                          |
 | `clipboard`        | `boolean`                                    | Paste from clipboard. Default `true`                               |
+| `capture`          | `boolean` &#x7C; `'user'` &#x7C; `'environment'` | Open the phone camera. See [Take a photo on mobile](#take-a-photo-on-mobile) |
 | `rejectDuplicates` | `boolean`                                    | Default `false`                                                    |
 | `compressImages`   | `boolean` &#x7C; `ImageCompressionOptions`   | Resize JPEG / PNG / WebP before upload. See [Image compression](#image-compression) |
 | `disabled`         | `boolean`                                    |                                                                    |
@@ -1001,6 +1067,8 @@ states, and scrollbars.
 | `hint`             | `ReactNode`                                  | Small descriptive line under the label                             |
 | `hideActions`      | `boolean`                                    | Hide the Upload / Remove all buttons shown in `manual` mode        |
 | `hideGallery`      | `boolean`                                    | Hide the built-in file list                                        |
+| `name`             | `string`                                     | Submit uploaded file URLs with the surrounding `<form>`. See [Use inside a form](#use-inside-a-form) |
+| `formValue`        | `(file) => string \| undefined`              | What to submit per file when `name` is set. Default `file.url`     |
 | `galleryLayout`    | `'list' \| 'grid' \| 'table' \| 'compact'`   | Default `'list'`                                                   |
 | `previewable`      | `boolean`                                    | Eye icon → fullscreen preview                                      |
 | `editable`         | `boolean`                                    | Pencil icon → rename + tag + describe                              |
@@ -1019,13 +1087,13 @@ states, and scrollbars.
 
 ### Full API surface
 
-- **Components** — `Dropzone`, `UploadArea`, `UploadActions`, `UploadButton`, `UploadProgress`, `UploadPreview`, `UploadGallery`, `UploadModal`, `FilePreviewModal`, `FileEditModal`, `ValidationErrorsModal`
+- **Components** — `Dropzone`, `UploadArea`, `UploadActions`, `UploadFormValue`, `UploadButton`, `UploadProgress`, `UploadPreview`, `UploadGallery`, `UploadModal`, `FilePreviewModal`, `FileEditModal`, `ValidationErrorsModal`
 - **Hooks** — `useDropzone`, `useUploader`, `useUploadQueue`, `useUploadProgress`, `useFilePreview`
 - **Providers** — `ThemeProvider`, `I18nProvider`
 - **Core** — `UploadQueue`, `validateFile`, `validateBatch`, `matchesAccept`
 - **Cloud (subpath)** — `createS3Adapter`, `createCloudinaryAdapter`, `createFirebaseStorageAdapter`, `createSupabaseAdapter`, `createDigitalOceanAdapter`, `createAzureBlobAdapter`, `createGcsAdapter`, `createMockAdapter`
 - **Variants (subpath)** — 21 named exports (see [Pre-built variants](#pre-built-variants))
-- **Utilities** — `compressImage`, `formatBytes`, `formatSpeed`, `formatEta`, `formatPercent`, `getFileCategory`, `detectSignature`, `wrapFile`, `generatePreview`, `revokePreview`, `cn`
+- **Utilities** — `compressImage`, `getImageSize`, `formatBytes`, `formatSpeed`, `formatEta`, `formatPercent`, `getFileCategory`, `detectSignature`, `wrapFile`, `generatePreview`, `revokePreview`, `cn`
 - **i18n exports** — `translations`, `rtlLocales`, type `Locale`, type `Translations`
 
 See [`docs/API.md`](https://github.com/yogeshgabani/react-upload-pro/blob/main/docs/API.md) for the full reference.

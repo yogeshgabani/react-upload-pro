@@ -5,6 +5,7 @@ import { cn } from '../utils/cn';
 import { formatBytes, formatEta, formatSpeed } from '../utils/format';
 import { UploadIcon, FileIcon, CheckIcon } from '../components/icons';
 import { UploadProgress } from '../components/UploadProgress';
+import { UploadFormValue } from '../components/UploadFormValue';
 import { UploadGallery } from '../components/UploadGallery';
 import { containerStyleFromProps, pickGalleryProps, surfaceStyleFromProps, type VariantProps } from "./types";
 
@@ -25,6 +26,7 @@ export function BusinessCRM({ className, label, hint, ...opts }: VariantProps) {
           )}
         >
           <input {...api.getInputProps()} />
+          {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
           <UploadIcon width={28} height={28} className="text-rup-accent" />
           <p className="font-semibold text-rup-fg">{label ?? t.dragOrClick}</p>
           {hint && <p className="text-xs text-rup-muted">{hint}</p>}
@@ -115,6 +117,7 @@ export function BusinessDashboard({ className, label, hint, ...opts }: VariantPr
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <UploadIcon width={18} height={18} />
         <span>{t.dragOrClick}</span>
       </div>
@@ -155,6 +158,7 @@ export function BusinessSaaS({ className, label, hint, ...opts }: VariantProps) 
           )}
         >
           <input {...api.getInputProps()} />
+          {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
           <div className="rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-3 text-white shadow-lg">
             <UploadIcon width={26} height={26} />
           </div>
