@@ -2079,7 +2079,7 @@ const releases: ReleaseEntry[] = [
     date: "2026-10-13",
     tag: "latest",
     summary:
-      "Client-side image compression, a mock adapter to try the library without a backend, an Upload button for manual mode, and `file.url` on every successful upload.",
+      "Client-side image compression, form submission with `name`, image-size and total-size limits, a mock adapter to try the library without a backend, an Upload button for manual mode, and `file.url` on every successful upload.",
     changes: [
       {
         label: "Added",
@@ -2087,6 +2087,10 @@ const releases: ReleaseEntry[] = [
           "`compressImages` option and `compressImage()` helper — resize and re-encode JPEG / PNG / WebP in the browser before validation and upload.",
           "`createMockAdapter()` in `react-upload-pro/cloud` — fake uploads with real progress, so you can try the UI with no backend.",
           "`<Dropzone>` shows Upload / Remove all buttons in `manual` mode (hide them with `hideActions`).",
+          "`name` prop on `<Dropzone>` and every variant — uploaded file URLs are submitted with the surrounding `<form>` (works with Next.js Server Actions and Remix). Customize with `formValue`, or use `<UploadFormValue>` with the hook.",
+          "`maxTotalSize` — a limit on the combined size of all files in the list.",
+          "`imageDimensions` — min / max width and height in pixels, with clear messages like \"Image is 120×90px; it must be at least 200×200px.\" Plus a `getImageSize()` helper.",
+          "`capture` — open the phone camera instead of the file picker.",
           "`label` prop on `<Dropzone>` and `<UploadArea>`.",
           "`file.url` — the uploaded file's URL, read from the adapter result or the endpoint's JSON response.",
           "`isUploading` and `isDragActive` (react-dropzone-style alias) on `useDropzone`.",
@@ -2543,7 +2547,39 @@ const STATS_NAMESPACE = "react-upload-pro";
 const STATS_HITS_KEY = "playground-hits";
 const STATS_VISITORS_KEY = "playground-visitors";
 const STATS_VISITOR_FLAG = "rup-visited";
-const SITE_LAST_UPDATED = "2026-06-05";
+
+const NPM_PACKAGE = "react-upload-pro";
+
+// Publish date of the `latest` npm version, e.g. "2026-10-13".
+async function fetchNpmLastPublished(): Promise<string> {
+  const pkg = await fetch(`https://registry.npmjs.org/${NPM_PACKAGE}`).then((r) =>
+    r.ok ? r.json() : Promise.reject(),
+  );
+  const published: unknown = pkg?.time?.[pkg?.["dist-tags"]?.latest];
+  if (typeof published !== "string") throw new Error("No publish time for the latest version");
+  return published.slice(0, 10);
+}
+
+// First npm publish. The downloads API silently caps one query at 18 months,
+// so the all-time total is summed from one-year chunks starting here.
+const NPM_FIRST_PUBLISH = "2026-06-02";
+
+async function fetchNpmDownloads(): Promise<number> {
+  const day = 86_400_000;
+  const today = Date.now();
+  const isoDate = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const requests: Promise<number>[] = [];
+  for (let start = Date.parse(NPM_FIRST_PUBLISH); start <= today; start += 365 * day) {
+    const end = Math.min(start + 364 * day, today);
+    requests.push(
+      fetch(`https://api.npmjs.org/downloads/point/${isoDate(start)}:${isoDate(end)}/${NPM_PACKAGE}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => Number(d?.downloads) || 0),
+    );
+  }
+  const counts = await Promise.all(requests);
+  return counts.reduce((sum, n) => sum + n, 0);
+}
 
 function formatStat(n: number): string {
   if (!Number.isFinite(n) || n < 0) return "—";
@@ -2582,13 +2618,24 @@ function useCountUp(target: number, durationMs = 1500): number {
 function SiteStatsStrip() {
   const [hits, setHits] = useState(0);
   const [visitors, setVisitors] = useState(0);
+  const [downloads, setDownloads] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState("");
   const hitsAnim = useCountUp(hits);
   const visitorsAnim = useCountUp(visitors);
+  const downloadsAnim = useCountUp(downloads);
 
   // Fetch counters on mount
   useEffect(() => {
     if (typeof window === "undefined") return;
     const base = "https://abacus.jasoncameron.dev";
+
+    // Latest npm release date and all-time npm downloads
+    fetchNpmLastPublished()
+      .then(setLastUpdated)
+      .catch(() => {});
+    fetchNpmDownloads()
+      .then(setDownloads)
+      .catch(() => {});
 
     // Total hits — increment on every page load
     fetch(`${base}/hit/${STATS_NAMESPACE}/${STATS_HITS_KEY}`)
@@ -2625,7 +2672,7 @@ function SiteStatsStrip() {
   }[] = [
     {
       label: "Last Updated",
-      value: SITE_LAST_UPDATED,
+      value: lastUpdated || "—",
       icon: (
         <svg
           viewBox="0 0 24 24"
@@ -2639,6 +2686,25 @@ function SiteStatsStrip() {
         >
           <rect x="3" y="4" width="18" height="17" rx="2" />
           <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      ),
+    },
+    {
+      label: "npm Downloads",
+      value: downloads > 0 ? formatStat(downloadsAnim) : "—",
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+          <path d="M7 10l5 5 5-5M12 15V3" />
         </svg>
       ),
     },
@@ -2701,7 +2767,7 @@ function SiteStatsStrip() {
               "linear-gradient(135deg, rgb(var(--rup-accent) / 0.55), rgb(168 85 247 / 0.45), rgb(var(--rup-accent) / 0.55))",
           }}
         >
-          <div className="grid gap-3 rounded-[15px] bg-white p-3 sm:grid-cols-3 sm:p-4 dark:bg-slate-950">
+          <div className="grid gap-3 rounded-[15px] bg-white p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-4 dark:bg-slate-950">
             {stats.map((stat) => (
               <div
                 key={stat.label}

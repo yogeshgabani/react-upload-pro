@@ -123,3 +123,56 @@ describe('<Dropzone /> manual-mode actions', () => {
     expect(screen.queryByRole('button', { name: /upload \(/i })).not.toBeInTheDocument();
   });
 });
+
+describe('<Dropzone /> form integration', () => {
+  const adapter: CloudAdapter = {
+    name: 'instant',
+    upload: async (file) => ({ url: `https://cdn.example.com/${file.name}` }),
+  };
+
+  async function selectFiles(container: HTMLElement, files: File[]) {
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: files, configurable: true });
+    await act(async () => {
+      fireEvent.change(input);
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
+
+  it('submits uploaded file URLs with the surrounding form', async () => {
+    const { container } = render(
+      <form>
+        <Dropzone name="attachments" mode="instant" cloud={adapter} />
+      </form>,
+    );
+    await selectFiles(container, [makeFile('a.png', 5, 'image/png'), makeFile('b.pdf', 5, 'application/pdf')]);
+    const form = container.querySelector('form') as HTMLFormElement;
+    expect(new FormData(form).getAll('attachments')).toEqual([
+      'https://cdn.example.com/a.png',
+      'https://cdn.example.com/b.pdf',
+    ]);
+  });
+
+  it('leaves out files that are not uploaded yet, and supports formValue', async () => {
+    const { container } = render(
+      <form>
+        <Dropzone name="ids" cloud={adapter} formValue={(f) => `id:${f.name}`} />
+      </form>,
+    );
+    await selectFiles(container, [makeFile('a.png', 5, 'image/png')]);
+    const form = container.querySelector('form') as HTMLFormElement;
+    expect(new FormData(form).getAll('ids')).toEqual([]); // manual mode: not uploaded yet
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Upload (1)' }));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(new FormData(form).getAll('ids')).toEqual(['id:a.png']);
+  });
+
+  it('passes capture to the file input', () => {
+    const { container } = render(<Dropzone accept="image/*" capture="environment" />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input.getAttribute('capture')).toBe('environment');
+  });
+});

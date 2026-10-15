@@ -5,6 +5,7 @@ import { cn } from '../utils/cn';
 import { normalizeColorInput } from '../variants/types';
 import { UploadActions } from './UploadActions';
 import { UploadArea } from './UploadArea';
+import { UploadFormValue } from './UploadFormValue';
 import { UploadGallery, type GalleryLayout } from './UploadGallery';
 import type { ProgressVariant } from './UploadProgress';
 
@@ -13,6 +14,13 @@ export interface DropzoneProps extends DropzoneOptions {
   children?: (api: UseDropzoneReturn) => ReactNode;
   /** Hide the built-in file list. Default false. */
   hideGallery?: boolean;
+  /**
+   * Submit uploaded files with the surrounding `<form>`: each successful
+   * upload adds a hidden `<input name={name} value={file.url}>`.
+   */
+  name?: string;
+  /** What to submit per uploaded file when `name` is set. Default: `file.url`. */
+  formValue?: (file: UploadFile) => string | undefined;
   /**
    * Hide the "Upload" / "Remove all" buttons shown under the file list in
    * `manual` mode. Use this when you call `start()` from your own UI.
@@ -73,6 +81,8 @@ export function Dropzone({
   children,
   hideGallery,
   hideActions,
+  name,
+  formValue,
   galleryLayout = 'list',
   progressVariant,
   progressSize,
@@ -138,6 +148,7 @@ export function Dropzone({
         {...api.getRootProps()}
       />
       <input {...api.getInputProps()} />
+      {name && <UploadFormValue name={name} files={api.files} formValue={formValue} />}
       {!hideGallery && api.files.length > 0 && (
         <UploadGallery
           files={api.files}

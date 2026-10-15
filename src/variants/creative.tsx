@@ -2,6 +2,7 @@ import { useDropzone } from '../hooks/useDropzone';
 import { useI18n } from '../i18n/I18nProvider';
 import { cn } from '../utils/cn';
 import { UploadIcon, ImageIcon } from '../components/icons';
+import { UploadFormValue } from '../components/UploadFormValue';
 import { UploadGallery } from '../components/UploadGallery';
 import { containerStyleFromProps, pickGalleryProps, surfaceStyleFromProps, type VariantProps } from "./types";
 
@@ -30,6 +31,7 @@ export function CreativeGradient({ className, label, hint, ...opts }: VariantPro
           )}
         >
           <input {...api.getInputProps()} />
+          {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 via-pink-500 to-amber-500 text-white shadow-lg">
             <UploadIcon width={26} height={26} />
           </div>
@@ -67,6 +69,7 @@ export function CreativeAnimated({ className, label, hint, ...opts }: VariantPro
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div
           className={cn(
             'mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-rup-accent/15 text-rup-accent transition-all duration-300',
@@ -111,6 +114,7 @@ export function CreativePremium({ className, label, hint, ...opts }: VariantProp
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.18),transparent_60%)]" />
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-rup-accent to-purple-500 text-white shadow-2xl">
           <ImageIcon width={36} height={36} />
@@ -159,6 +163,7 @@ export function CreativeAvatar({ className, label, ...opts }: VariantProps) {
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         {preview ? (
           <img src={preview} alt="" className="h-full w-full object-cover" />
         ) : (

@@ -32,6 +32,7 @@ export type {
   FileMetadata,
   Accept,
   ImageCompressionOptions,
+  ImageDimensionLimits,
   Locale,
   Translations,
   Theme,
@@ -63,5 +64,6 @@ export {
   generatePreview,
   revokePreview,
   compressImage,
+  getImageSize,
   cn,
 } from './utils';

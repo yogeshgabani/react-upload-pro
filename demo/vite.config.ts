@@ -4,6 +4,9 @@ import path from 'node:path';
 
 export default defineConfig({
   root: path.resolve(__dirname),
+  // Vite looks for .env files in `root` (demo/) by default; keep them at the
+  // repo root next to package.json instead.
+  envDir: path.resolve(__dirname, '..'),
   plugins: [react()],
   resolve: {
     alias: {

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { BusinessCRM, MinimalModern } from '../src/variants';
+import { BusinessCRM, CreativeAvatar, MinimalModern } from '../src/variants';
 import { makeFile } from './helpers';
 
-async function selectFile(container: HTMLElement) {
+async function selectFile(container: HTMLElement, file = makeFile('a.txt', 5, 'text/plain')) {
   const input = container.querySelector('input[type="file"]') as HTMLInputElement;
   Object.defineProperty(input, 'files', {
-    value: [makeFile('a.txt', 5, 'text/plain')],
+    value: [file],
     configurable: true,
   });
   await act(async () => {
@@ -38,5 +38,26 @@ describe('variants in manual mode', () => {
     await selectFile(container);
     expect(screen.getByRole('button', { name: 'Start upload' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /upload \(/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('variants in a form', () => {
+  it('submit uploaded file URLs when name is set', async () => {
+    const adapter = {
+      name: 'instant',
+      upload: async (file: { name: string }) => ({ url: `https://cdn.example.com/${file.name}` }),
+    };
+    for (const Variant of [MinimalModern, CreativeAvatar]) {
+      const { container, unmount } = render(
+        <form>
+          <Variant name="photo" mode="instant" cloud={adapter} />
+        </form>,
+      );
+      // An image, because CreativeAvatar only accepts image/* by default.
+      await selectFile(container, makeFile('me.png', 5, 'image/png'));
+      const form = container.querySelector('form') as HTMLFormElement;
+      expect(new FormData(form).getAll('photo')).toEqual(['https://cdn.example.com/me.png']);
+      unmount();
+    }
   });
 });

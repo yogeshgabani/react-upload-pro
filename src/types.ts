@@ -93,6 +93,9 @@ export type ValidationErrorCode =
   | 'file-invalid-type'
   | 'too-many-files'
   | 'duplicate-file'
+  | 'total-size-exceeded'
+  | 'image-too-small'
+  | 'image-too-large'
   | 'custom';
 
 export interface ValidationError {
@@ -110,6 +113,13 @@ export interface UploadError {
 
 export type Accept = string | string[] | Record<string, string[]>;
 
+export interface ImageDimensionLimits {
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
 export interface ValidationConfig {
   /** Accepted MIME types or extensions. `image/*`, `.pdf`, or { "image/*": [".png"] } */
   accept?: Accept;
@@ -119,6 +129,14 @@ export interface ValidationConfig {
   maxSize?: number;
   /** Max number of files. */
   maxFiles?: number;
+  /** Max combined size in bytes of every file in the list, including ones added earlier. */
+  maxTotalSize?: number;
+  /**
+   * Pixel limits for JPEG / PNG / WebP / GIF / AVIF / BMP images. Checked after
+   * `compressImages`, so `max*` limits see the resized image. Images the
+   * browser can't decode, and non-image files, are not checked.
+   */
+  imageDimensions?: ImageDimensionLimits;
   /** If true, reject duplicate files (same name + size). */
   rejectDuplicates?: boolean;
   /** Custom validators run after built-ins. Return null for valid. */
@@ -226,6 +244,12 @@ export interface DropzoneOptions extends ValidationConfig, UploaderConfig, Dropz
    * quality). GIF, SVG and other files pass through untouched.
    */
   compressImages?: boolean | ImageCompressionOptions;
+  /**
+   * Open the camera on phones instead of the file picker: `'user'` (front),
+   * `'environment'` (back), or `true` to let the browser pick. Ignored on
+   * desktop. Pair with `accept="image/*"` or `"video/*"`.
+   */
+  capture?: boolean | 'user' | 'environment';
   /** Allow multiple files. Default true. */
   multiple?: boolean;
   /** Allow directory upload via webkitdirectory. Default false. */
