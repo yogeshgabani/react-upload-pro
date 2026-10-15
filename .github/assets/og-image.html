@@ -1,0 +1,182 @@
+<!doctype html>
+<!--
+  Source for demo/public/og-image.png — the social preview card shown when
+  https://react-upload-pro.netlify.app/ is shared (Twitter / X, LinkedIn,
+  WhatsApp, Slack, Discord…). Also fine for GitHub's repo "Social preview".
+
+  To regenerate after editing: open this file in Chrome with the window
+  sized to 1200×630 and screenshot it, or with Playwright:
+    page.setViewportSize({ width: 1200, height: 630 });
+    page.goto('file:///…/og-image.html');
+    page.screenshot({ path: 'demo/public/og-image.png' });
+
+  Deliberately version-free so it never goes stale.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>react-upload-pro social preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, system-ui, sans-serif;
+    color: #f1f5f9;
+    background:
+      radial-gradient(620px 420px at 88% 8%, rgba(236, 72, 153, 0.30), transparent 70%),
+      radial-gradient(700px 500px at 8% 100%, rgba(99, 102, 241, 0.38), transparent 70%),
+      #0b1020;
+    position: relative;
+  }
+  /* faint grid for texture */
+  body::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+  }
+  .wrap { position: relative; display: flex; height: 100%; padding: 64px 64px 56px; gap: 48px; }
+
+  /* ── left: brand + pitch ── */
+  .left { flex: 1 1 0; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .logo {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899);
+    display: grid; place-items: center;
+    box-shadow: 0 12px 32px -8px rgba(168, 85, 247, 0.6);
+  }
+  .name { font-size: 50px; font-weight: 800; letter-spacing: -1.5px; }
+  .tagline { margin-top: 30px; font-size: 40px; line-height: 1.15; font-weight: 700; letter-spacing: -0.8px; }
+  .tagline span {
+    background: linear-gradient(90deg, #a5b4fc, #f0abfc);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { margin-top: 16px; font-size: 21px; line-height: 1.45; color: #94a3b8; max-width: 520px; }
+  .chips { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px; max-width: 540px; }
+  .chip {
+    font-size: 16px; font-weight: 600; color: #c7d2fe;
+    padding: 7px 14px; border-radius: 999px;
+    background: rgba(99, 102, 241, 0.14); border: 1px solid rgba(129, 140, 248, 0.32);
+  }
+  .bottom { margin-top: auto; display: flex; align-items: center; gap: 16px; }
+  .npm {
+    font-family: "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+    font-size: 20px; color: #e2e8f0;
+    padding: 12px 18px; border-radius: 12px;
+    background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.22);
+  }
+  .npm b { color: #f472b6; font-weight: 600; }
+  .url { font-size: 18px; color: #94a3b8; font-weight: 600; }
+
+  /* ── right: product mock ── */
+  .right { width: 470px; display: flex; align-items: center; }
+  .card {
+    width: 100%;
+    padding: 22px; border-radius: 22px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(99, 102, 241, 0.08);
+  }
+  .drop {
+    border: 2px dashed rgba(129, 140, 248, 0.55); border-radius: 16px;
+    background: rgba(99, 102, 241, 0.08);
+    padding: 24px 16px 22px; text-align: center;
+  }
+  .drop .icon {
+    width: 50px; height: 50px; border-radius: 999px; margin: 0 auto 10px;
+    background: rgba(129, 140, 248, 0.18); display: grid; place-items: center;
+  }
+  .drop .t { font-size: 17px; font-weight: 600; }
+  .drop .h { margin-top: 4px; font-size: 14px; color: #94a3b8; }
+  .rows { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 14px; border-radius: 14px;
+    background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148, 163, 184, 0.12);
+  }
+  .thumb { width: 42px; height: 42px; border-radius: 10px; flex: none; }
+  .meta { flex: 1; min-width: 0; }
+  .fname { font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; }
+  .fname em { font-style: normal; font-weight: 500; font-size: 13px; color: #94a3b8; }
+  .bar { margin-top: 8px; height: 6px; border-radius: 999px; background: rgba(148, 163, 184, 0.2); overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6366f1, #a855f7); }
+  .done .fill { background: #22c55e; }
+  .ok { width: 22px; height: 22px; border-radius: 999px; background: #22c55e; display: grid; place-items: center; flex: none; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="left">
+      <div class="brand">
+        <div class="logo">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+        </div>
+        <div class="name">react-upload-pro</div>
+      </div>
+
+      <h1 class="tagline">File uploads for React,<br /><span>done in two lines.</span></h1>
+      <p class="sub">Drag &amp; drop, progress, previews, retries and direct-to-cloud uploads — with 21 ready-made designs.</p>
+
+      <div class="chips">
+        <span class="chip">S3 · Cloudinary · Firebase</span>
+        <span class="chip">Image compression</span>
+        <span class="chip">23 languages</span>
+        <span class="chip">TypeScript</span>
+        <span class="chip">Next.js ready</span>
+      </div>
+
+      <div class="bottom">
+        <div class="npm"><b>npm i</b> react-upload-pro</div>
+        <div class="url">react-upload-pro.netlify.app</div>
+      </div>
+    </section>
+
+    <section class="right">
+      <div class="card">
+        <div class="drop">
+          <div class="icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <div class="t">Drag &amp; drop files or click to browse</div>
+          <div class="h">PNG, JPG, PDF up to 10 MB</div>
+        </div>
+
+        <div class="rows">
+          <div class="row done">
+            <div class="thumb" style="background: linear-gradient(135deg, #10b981, #06b6d4)"></div>
+            <div class="meta">
+              <div class="fname">team-offsite.jpg <em>1.2 MB</em></div>
+              <div class="bar"><div class="fill" style="width: 100%"></div></div>
+            </div>
+            <div class="ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+          </div>
+          <div class="row">
+            <div class="thumb" style="background: linear-gradient(135deg, #6366f1, #ec4899)"></div>
+            <div class="meta">
+              <div class="fname">hero-banner.png <em>68% · 2s left</em></div>
+              <div class="bar"><div class="fill" style="width: 68%"></div></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="thumb" style="background: linear-gradient(135deg, #f59e0b, #ef4444)"></div>
+            <div class="meta">
+              <div class="fname">invoice-2026.pdf <em>31% · 4s left</em></div>
+              <div class="bar"><div class="fill" style="width: 31%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

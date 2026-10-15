@@ -2,6 +2,7 @@ import { useDropzone } from '../hooks/useDropzone';
 import { useI18n } from '../i18n/I18nProvider';
 import { cn } from '../utils/cn';
 import { UploadIcon, FolderIcon, ImageIcon } from '../components/icons';
+import { UploadFormValue } from '../components/UploadFormValue';
 import { UploadGallery } from '../components/UploadGallery';
 import { containerStyleFromProps, pickGalleryProps, surfaceStyleFromProps, type VariantProps } from "./types";
 
@@ -20,6 +21,7 @@ export function MinimalModern({ className, label, hint, ...opts }: VariantProps)
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rup-accent/10 text-rup-accent">
           <UploadIcon width={22} height={22} />
         </div>
@@ -53,6 +55,7 @@ export function MinimalGlass({ className, label, hint, ...opts }: VariantProps) 
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-rup-accent/20 via-transparent to-pink-500/20" />
         <div className="relative flex flex-col items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/30 text-white backdrop-blur">
@@ -90,6 +93,7 @@ export function MinimalNeumorphic({ className, label, hint, ...opts }: VariantPr
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-rup-accent shadow-[8px_8px_16px_rgb(0_0_0_/_0.08),-8px_-8px_16px_rgb(255_255_255_/_0.7)] dark:bg-slate-800 dark:shadow-[8px_8px_16px_rgb(0_0_0_/_0.4),-8px_-8px_16px_rgb(255_255_255_/_0.05)]">
           <UploadIcon width={28} height={28} />
         </div>
@@ -124,6 +128,7 @@ export function MinimalMaterial({ className, label, hint, ...opts }: VariantProp
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rup-accent/15 text-rup-accent">
           <FolderIcon width={26} height={26} />
         </div>
@@ -168,6 +173,7 @@ export function MinimalInline({ className, label, hint, ...opts }: VariantProps)
         )}
       >
         <input {...api.getInputProps()} />
+        {opts.name && <UploadFormValue name={opts.name} files={api.files} formValue={opts.formValue} />}
         <div className="flex items-center gap-2 text-rup-muted">
           <ImageIcon width={16} height={16} />
           <span>{label ?? t.dragOrClick}</span>

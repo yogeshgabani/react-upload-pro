@@ -90,10 +90,13 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
     noBubble: _noBubble = true,
     autoRevoke = true,
     compressImages,
+    capture,
     accept,
     minSize,
     maxSize,
     maxFiles,
+    maxTotalSize,
+    imageDimensions,
     rejectDuplicates,
     validators,
     onDrop,
@@ -136,9 +139,19 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
 
       const { accepted, rejected: rejectedFiles } = await validateBatch(
         pool,
-        { accept, minSize, maxSize, maxFiles, rejectDuplicates, validators },
+        {
+          accept,
+          minSize,
+          maxSize,
+          maxFiles,
+          maxTotalSize,
+          imageDimensions,
+          rejectDuplicates,
+          validators,
+        },
         isReplacement ? 0 : queueApi.files.length,
         isReplacement ? new Set() : existingKeys,
+        isReplacement ? 0 : queueApi.files.reduce((sum, f) => sum + f.size, 0),
       );
 
       const wrapped = accepted.map((f) => {
@@ -160,6 +173,8 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
       minSize,
       maxSize,
       maxFiles,
+      maxTotalSize,
+      imageDimensions,
       rejectDuplicates,
       validators,
       queueApi,
@@ -352,6 +367,7 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
         },
         type: 'file',
         multiple,
+        capture,
         disabled,
         accept: accept ? normalizeAccept(accept).join(',') : undefined,
         style: { display: 'none', ...props.style },
@@ -363,7 +379,7 @@ export function useDropzone(options: DropzoneOptions = {}): UseDropzoneReturn {
         'aria-hidden': true,
       };
     },
-    [multiple, disabled, accept, directory, handleInputChange],
+    [multiple, capture, disabled, accept, directory, handleInputChange],
   );
 
   return {

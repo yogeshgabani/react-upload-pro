@@ -2,6 +2,7 @@ export * from './Dropzone';
 export * from './UploadActions';
 export * from './UploadArea';
 export * from './UploadButton';
+export * from './UploadFormValue';
 export * from './UploadProgress';
 export * from './UploadPreview';
 export * from './UploadGallery';
